@@ -296,10 +296,10 @@ export default function StudentAppPage() {
                   <tbody className={`divide-y font-mono ${isLight ? 'divide-slate-200' : 'divide-slate-800'}`}>
                     {store.transactions.map((tx) => (
                       <tr key={tx.id} className={isLight ? 'hover:bg-slate-50' : 'hover:bg-white/[0.02]'}>
-                        <td className="p-3 text-emerald-600 font-bold">{tx.mpesaReceiptNumber || 'MPESA_PENDING'}</td>
+                        <td className="p-3 text-emerald-600 font-bold">{tx.mpesaReceipt || 'MPESA_PENDING'}</td>
                         <td className={`p-3 ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>{tx.phoneNumber}</td>
-                        <td className={`p-3 font-sans ${isLight ? 'text-slate-900' : 'text-slate-200'}`}>{tx.featureUnlocked || 'Campus Pass'}</td>
-                        <td className="p-3 text-emerald-600 font-bold">KSh {tx.amountKes || 130}</td>
+                        <td className={`p-3 font-sans ${isLight ? 'text-slate-900' : 'text-slate-200'}`}>{tx.purpose || 'Campus Pass'}</td>
+                        <td className="p-3 text-emerald-600 font-bold">KSh {tx.amount || 130}</td>
                         <td className="p-3">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                             isLight ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-emerald-950/40 text-emerald-400 border-emerald-800'
@@ -308,7 +308,7 @@ export default function StudentAppPage() {
                           </span>
                         </td>
                         <td className={`p-3 text-[11px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                          {new Date(tx.timestamp || tx.createdAt || Date.now()).toLocaleTimeString()}
+                          {new Date(tx.createdAt || Date.now()).toLocaleTimeString()}
                         </td>
                       </tr>
                     ))}

@@ -104,4 +104,5 @@ export interface ServiceSubscriptionMetric {
   subscriberCount: number;
   revenueKes: number;
   category: string;
+  description?: string;
 }
