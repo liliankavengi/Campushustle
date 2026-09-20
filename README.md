@@ -1,10 +1,10 @@
-# CampusHustle Kenya 🚀
+# CampusHustle Kenya 
 
 **CampusHustle** is a specialized, low-bandwidth financial operating engine engineered for Kenyan higher-education university students (MMU, UoN, KU, JKUAT, Strathmore, Egerton, Moi).
 
 ---
 
-## ⚡ Core Features
+##  Core Features
 
 1. **Campus Opportunities & Escrow Gigs**:
    - Escrow-secured campus bounties (LaTeX, tutoring, coding, data analysis).
@@ -24,8 +24,8 @@
    - KSh 130 one-time semester all-access pass via instant M-Pesa STK push.
    - Unlocks client contact numbers, WhatsApp direct chats, and PDF export statements.
 
-5. **Isolated Admin Command Center (`/admin`)**:
-   - Restricted access exclusively to `liliankavengi502@gmail.com`.
+5. **Isolated Admin Command Center **:
+   - Restricted access exclusively.
    - Real-time student subscription metrics, campus distribution, and Daraja escrow audits.
 
 6. **Aesthetics & UX**:
@@ -36,7 +36,7 @@
 
 ---
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript
@@ -46,7 +46,7 @@
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ```bash
 # 1. Install dependencies
@@ -60,6 +60,6 @@ Open [http://localhost:3000](http://localhost:3000) with your browser.
 
 ---
 
-## 📦 Deployment
+##  Deployment
 
 Deployable with 1-click on [Vercel](https://vercel.com) or [Netlify](https://netlify.com).
