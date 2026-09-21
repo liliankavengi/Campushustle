@@ -26,7 +26,7 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
   const store = useCampusStore();
   const isLight = store.theme === 'light';
 
-  const [phoneNumber, setPhoneNumber] = useState('0712345678');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [amount] = useState(130);
   const [step, setStep] = useState<'IDLE' | 'SENDING' | 'WAITING_PIN' | 'VERIFYING' | 'SUCCESS' | 'FAILED'>('IDLE');
   const [checkoutId, setCheckoutId] = useState<string>('');
@@ -34,6 +34,7 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
   const [errorMessage, setErrorMessage] = useState('');
   const [receiptNumber, setReceiptNumber] = useState('');
   const [countdown, setCountdown] = useState(30);
+  const [shakePhone, setShakePhone] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -59,8 +60,11 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
 
   const handleInitiateStk = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phoneNumber || phoneNumber.length < 9) {
-      setErrorMessage('Please enter a valid Safaricom phone number (e.g. 0712345678)');
+    const cleaned = phoneNumber.replace(/\s+/g, '').replace(/^\+254/, '0');
+    if (!cleaned || cleaned.length < 10 || !/^(07|01)\d{8}$/.test(cleaned)) {
+      setErrorMessage('Enter a valid Safaricom number — e.g. 0712 345 678');
+      setShakePhone(true);
+      setTimeout(() => setShakePhone(false), 600);
       return;
     }
 
@@ -68,15 +72,11 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
     setCountdown(35);
     setErrorMessage('');
 
-    let cleanPhone = phoneNumber.replace(/\s+/g, '');
-    if (cleanPhone.startsWith('0')) {
-      cleanPhone = '254' + cleanPhone.substring(1);
-    } else if (!cleanPhone.startsWith('254')) {
-      cleanPhone = '254' + cleanPhone;
-    }
+    // Convert 07XXXXXXXX → 2547XXXXXXXX for Daraja/PayHero
+    const intlPhone = '254' + cleaned.substring(1);
 
     try {
-      const tx = await store.initiateDarajaStk(cleanPhone, amount, 'SUBSCRIPTION_PASS');
+      const tx = await store.initiateDarajaStk(intlPhone, amount, 'SUBSCRIPTION_PASS');
       setCheckoutId(tx.checkoutRequestId);
 
       setTimeout(() => {
@@ -84,9 +84,10 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
       }, 800);
     } catch {
       setStep('FAILED');
-      setErrorMessage('Daraja API connection error. Check your network.');
+      setErrorMessage('Connection error. Check your network and try again.');
     }
   };
+
 
   const handleSimulatePinSubmit = (success: boolean = true) => {
     setStep('VERIFYING');
@@ -180,26 +181,33 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
               {/* STK Push Form */}
               <form onSubmit={handleInitiateStk} className="space-y-3.5">
                 <div>
-                  <label className={`block text-xs font-semibold mb-1 ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
-                    Safaricom Phone Number (M-Pesa Registered)
+                  <label className={`block text-xs font-bold mb-1.5 ${isLight ? 'text-slate-700' : 'text-slate-200'}`}>
+                    📱 Enter Your M-Pesa Phone Number
                   </label>
-                  <div className="relative">
+                  <div className={`relative transition-all duration-150 ${shakePhone ? 'animate-bounce' : ''}`}>
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                      <span className={`text-xs font-bold ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>+254</span>
+                      <span className={`text-xs font-bold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>🇰🇪 +254</span>
                     </div>
                     <input
                       type="tel"
                       value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      placeholder="712 345 678"
+                      onChange={(e) => { setPhoneNumber(e.target.value); setErrorMessage(''); }}
+                      placeholder="0712 345 678"
                       required
-                      className={`w-full pl-14 pr-4 py-2 border rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:border-emerald-500 ${
-                        isLight ? 'bg-slate-50 border-slate-200 text-slate-900' : 'bg-slate-950 border-slate-800 text-white'
-                      }`}
+                      autoFocus
+                      inputMode="numeric"
+                      className={`w-full pl-20 pr-4 py-3 border-2 rounded-xl text-sm font-semibold focus:outline-none transition-colors ${
+                        shakePhone
+                          ? 'border-red-500 bg-red-50 dark:bg-red-950/20'
+                          : errorMessage
+                          ? 'border-red-400 focus:border-red-500'
+                          : 'border-emerald-500/50 focus:border-emerald-500'
+                      } ${isLight ? 'bg-white text-slate-900' : 'bg-slate-950 text-white'}`}
                     />
                   </div>
-                  <p className={`text-[10px] mt-1 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                    An STK prompt will appear on your screen requesting your M-Pesa PIN.
+                  <p className={`text-[11px] mt-1.5 flex items-center gap-1 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                    <span>💬</span>
+                    <span>You will receive an M-Pesa PIN prompt on this number.</span>
                   </p>
                 </div>
 
@@ -212,10 +220,15 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
 
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow-sm transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
+                  disabled={!phoneNumber}
+                  className={`w-full py-3 font-bold rounded-xl text-sm shadow-sm transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer ${
+                    phoneNumber
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      : isLight ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                  }`}
                 >
-                  <Lock className="w-4 h-4" />
-                  <span>Send M-Pesa Prompt (KSh 130)</span>
+                  <Smartphone className="w-4 h-4" />
+                  <span>Send M-Pesa Prompt to {phoneNumber || 'your number'} → KSh 130</span>
                 </button>
               </form>
             </div>
@@ -224,9 +237,9 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
           {step === 'SENDING' && (
             <div className="py-8 text-center space-y-3">
               <div className="w-10 h-10 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
-              <h4 className="text-sm font-bold">Initiating Daraja 2.0 Handshake</h4>
+              <h4 className="text-sm font-bold">Sending M-Pesa Prompt…</h4>
               <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                Triggering Safaricom STK Push to handset {phoneNumber}...
+                STK push dispatched to <strong className="font-mono text-emerald-600">{phoneNumber}</strong> — check your phone.
               </p>
             </div>
           )}
@@ -239,7 +252,7 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
                 <Smartphone className="w-8 h-8 text-emerald-600 mx-auto animate-bounce" />
                 <h4 className="text-sm font-bold">M-Pesa STK Prompt Sent</h4>
                 <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
-                  Check your phone screen and enter your M-Pesa PIN to complete payment of <strong className="text-emerald-600">KSh {amount}</strong> to CampusHustle.
+                  Check <strong className="font-mono text-emerald-600">{phoneNumber}</strong> for the M-Pesa PIN prompt and enter your PIN to pay <strong className="text-emerald-600">KSh {amount}</strong>.
                 </p>
                 <span className="text-[11px] font-mono text-emerald-600 block">
                   Awaiting confirmation ({countdown}s)...
