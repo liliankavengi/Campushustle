@@ -30,8 +30,8 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
   const store = useCampusStore();
   const isLight = store.theme === 'light';
 
-  // Default to requested user phone number: 0715516715
-  const [phoneNumber, setPhoneNumber] = useState('0715516715');
+  // Start empty so user keys in their own M-Pesa phone number
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [amount] = useState(130);
   const [step, setStep] = useState<'IDLE' | 'SENDING' | 'WAITING_PIN' | 'VERIFYING' | 'SUCCESS' | 'FAILED'>('IDLE');
   const [checkoutId, setCheckoutId] = useState<string>('');
@@ -48,11 +48,13 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
       setErrorMessage('');
       setReceiptNumber('');
       setIsMinimized(false);
-      if (!phoneNumber) {
-        setPhoneNumber('0715516715');
+      if (store.user?.phoneNumber && store.user.phoneNumber.trim() !== '') {
+        setPhoneNumber(store.user.phoneNumber);
+      } else {
+        setPhoneNumber('');
       }
     }
-  }, [isOpen]);
+  }, [isOpen, store.user?.phoneNumber]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -280,7 +282,7 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
               <form onSubmit={handleInitiateStk} className="space-y-3.5">
                 <div>
                   <label className={`block text-xs font-bold mb-1.5 ${isLight ? 'text-slate-700' : 'text-slate-200'}`}>
-                    📱 M-Pesa Phone Number for PIN Prompt
+                    📱 Key in your M-Pesa Phone Number for PIN Prompt
                   </label>
                   <div className={`relative transition-all duration-150 ${shakePhone ? 'animate-bounce' : ''}`}>
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -290,7 +292,7 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
                       type="tel"
                       value={phoneNumber}
                       onChange={(e) => { setPhoneNumber(e.target.value); setErrorMessage(''); }}
-                      placeholder="0715 516 715"
+                      placeholder="07XXXXXXXX or 01XXXXXXXX"
                       required
                       autoFocus
                       inputMode="numeric"
@@ -300,7 +302,7 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
                           : errorMessage
                           ? 'border-red-400 focus:border-red-500'
                           : 'border-emerald-500/60 focus:border-emerald-500'
-                      } ${isLight ? 'bg-white text-slate-900' : 'bg-slate-950 text-white'}`}
+                      } ${isLight ? 'bg-white text-slate-900 placeholder:text-slate-400' : 'bg-slate-950 text-white placeholder:text-slate-600'}`}
                     />
                   </div>
                   <p className={`text-[11px] mt-1.5 flex items-center gap-1 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
@@ -318,15 +320,19 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
 
                 <button
                   type="submit"
-                  disabled={!phoneNumber}
+                  disabled={!phoneNumber.trim()}
                   className={`w-full py-3.5 font-black rounded-xl text-sm shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer ${
-                    phoneNumber
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    phoneNumber.trim()
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
                       : isLight ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                   }`}
                 >
                   <Smartphone className="w-4 h-4" />
-                  <span>Send M-Pesa Prompt to {phoneNumber} → Pay KSh 130</span>
+                  <span>
+                    {phoneNumber.trim() 
+                      ? `Send M-Pesa Prompt to ${phoneNumber.trim()} → Pay KSh 130` 
+                      : 'Key In M-Pesa Number to Receive PIN Prompt ($1)'}
+                  </span>
                 </button>
               </form>
             </div>
