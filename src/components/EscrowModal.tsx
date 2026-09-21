@@ -63,7 +63,7 @@ export const EscrowModal: React.FC<EscrowModalProps> = ({ isOpen, onClose }) => 
       store.addGig({
         posterId: store.user.id,
         posterName: `${store.user.fullName} (${store.user.campus})`,
-        posterPhone: store.user.phoneNumber || '254715516715',
+        posterPhone: store.user.phoneNumber || '254712345678',
         title,
         description,
         category,

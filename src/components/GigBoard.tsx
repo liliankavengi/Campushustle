@@ -628,13 +628,13 @@ export const GigBoard: React.FC<GigBoardProps> = ({
                   <div className="flex items-center justify-between text-xs font-semibold">
                     <span>Direct Poster Contact:</span>
                     <span className="text-emerald-600 font-mono font-bold">
-                      +{activeGigModal.posterPhone || '254715516715'}
+                      +{activeGigModal.posterPhone || '254712000001'}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <a
-                      href={`https://wa.me/${activeGigModal.posterPhone || '254715516715'}?text=Hi%20I%20am%20applying%20for%20your%20CampusHustle%20task:%20${encodeURIComponent(activeGigModal.title)}`}
+                      href={`https://wa.me/${activeGigModal.posterPhone || '254712000001'}?text=Hi%20I%20am%20applying%20for%20your%20CampusHustle%20task:%20${encodeURIComponent(activeGigModal.title)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => store.applyToGig(activeGigModal.id)}
@@ -645,7 +645,7 @@ export const GigBoard: React.FC<GigBoardProps> = ({
                     </a>
 
                     <a
-                      href={`tel:+${activeGigModal.posterPhone || '254715516715'}`}
+                      href={`tel:+${activeGigModal.posterPhone || '254712000001'}`}
                       onClick={() => store.applyToGig(activeGigModal.id)}
                       className={`py-2.5 border text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-center cursor-pointer ${
                         isLight ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-800' : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-white'

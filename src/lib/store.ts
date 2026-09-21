@@ -476,7 +476,7 @@ export class CampusHustleStore {
 
     const newUser: User = {
       id: `usr-${campus.toLowerCase()}-${Math.floor(10000 + Math.random() * 90000)}`,
-      phoneNumber: emailOrPhone.includes('@') ? `254715516715` : emailOrPhone,
+      phoneNumber: emailOrPhone.includes('@') ? '' : emailOrPhone,
       email: emailOrPhone.includes('@') ? emailOrPhone : undefined,
       fullName: fullName || (isGoogle ? 'Verified Google Scholar' : 'Campus Hustler'),
       campus,

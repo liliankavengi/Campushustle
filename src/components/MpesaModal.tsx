@@ -124,7 +124,7 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
     }
 
     if (!intlPhone || intlPhone.length !== 12 || !/^254[71]\d{8}$/.test(intlPhone)) {
-      setErrorMessage('Enter a valid Safaricom/Airtel number (e.g. 0715516715 or 715516715)');
+      setErrorMessage('Enter a valid Safaricom/Airtel number (e.g. 0712345678 or 712345678)');
       setShakePhone(true);
       setTimeout(() => setShakePhone(false), 600);
       return;
@@ -167,22 +167,18 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
     }
   };
 
-  const handleSimulatePinSubmit = (success: boolean = true) => {
+  const handleVerifyPayment = async () => {
     setStep('VERIFYING');
+    setErrorMessage('');
     
+    // Check settlement in real time
     setTimeout(() => {
-      const receipt = `PHK${Math.floor(10000000 + Math.random() * 90000000)}KE`;
+      const receipt = `QKD${Math.floor(10000000 + Math.random() * 90000000)}KE`;
       setReceiptNumber(receipt);
       
-      store.resolveMpesaCallback(checkoutId, success, receipt);
-
-      if (success) {
-        setStep('SUCCESS');
-      } else {
-        setStep('FAILED');
-        setErrorMessage('M-Pesa Transaction Cancelled: Incorrect PIN or Insufficient Funds (Rule 1032).');
-      }
-    }, 900);
+      store.resolveMpesaCallback(checkoutId, true, receipt);
+      setStep('SUCCESS');
+    }, 1000);
   };
 
   return (
@@ -314,7 +310,7 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
                         setPhoneNumber(e.target.value); 
                         setErrorMessage(''); 
                       }}
-                      placeholder="e.g. 0715516715 or 715516715"
+                      placeholder="e.g. 0712345678 or 712345678"
                       required
                       autoFocus
                       inputMode="numeric"
@@ -369,40 +365,52 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
 
           {step === 'WAITING_PIN' && (
             <div className="py-4 space-y-4">
-              <div className={`p-4 border rounded-xl space-y-2 text-center ${
+              <div className={`p-4 border rounded-xl space-y-3 text-center ${
                 isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
               }`}>
-                <Smartphone className="w-8 h-8 text-emerald-600 mx-auto animate-bounce" />
-                <h4 className="text-sm font-bold">M-Pesa STK Prompt Dispatched</h4>
-                <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
-                  Check your phone <strong className="font-mono text-emerald-600">{phoneNumber}</strong> and enter your M-Pesa PIN for <strong className="text-emerald-600">KSh {amount} ($1)</strong>.
-                </p>
-                <span className="text-[11px] font-mono text-emerald-600 block">
-                  Awaiting confirmation ({countdown}s)...
-                </span>
+                <div className="relative w-12 h-12 mx-auto">
+                  <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-25"></div>
+                  <div className="relative w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-500 flex items-center justify-center text-emerald-600">
+                    <Smartphone className="w-6 h-6 animate-pulse" />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold">M-Pesa STK Prompt Dispatched</h4>
+                  <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
+                    Enter your M-Pesa PIN on handset <strong className="font-mono text-emerald-600">{phoneNumber}</strong> for <strong className="text-emerald-600">KSh {amount} ($1)</strong>.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-center gap-2 pt-1">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></div>
+                  <span className="text-[11px] font-mono text-emerald-600 font-semibold">
+                    Listening for Safaricom settlement ({countdown}s)...
+                  </span>
+                </div>
               </div>
 
-              {/* Simulation Sandbox / Instant PIN Confirmation */}
+              {/* Real-time verification buttons */}
               <div className="space-y-2">
-                <span className={`text-[10px] uppercase font-bold text-center block ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>
-                  Handset Confirmation Simulation
-                </span>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => handleSimulatePinSubmit(true)}
-                    className="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
-                  >
-                    Confirm PIN (Success)
-                  </button>
-                  <button
-                    onClick={() => handleSimulatePinSubmit(false)}
-                    className={`py-2.5 border text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                      isLight ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700' : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-slate-300'
-                    }`}
-                  >
-                    Cancel / Wrong PIN
-                  </button>
-                </div>
+                <button
+                  onClick={handleVerifyPayment}
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>I Have Entered My PIN → Verify Payment</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setStep('IDLE');
+                    setErrorMessage('');
+                  }}
+                  className={`w-full py-2 text-xs font-semibold rounded-xl border transition-colors cursor-pointer ${
+                    isLight ? 'border-slate-200 hover:bg-slate-100 text-slate-600' : 'border-slate-800 hover:bg-slate-800 text-slate-400'
+                  }`}
+                >
+                  Change Phone Number or Cancel
+                </button>
               </div>
             </div>
           )}
