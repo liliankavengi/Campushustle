@@ -251,10 +251,40 @@ export const Header: React.FC<HeaderProps> = ({
                       ))}
                     </div>
                   </div>
+
+                  {/* Dropdown Logout button */}
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                    <button
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        store.logout();
+                      }}
+                      className={`w-full py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border transition-colors cursor-pointer ${
+                        isLight ? 'bg-red-50 hover:bg-red-100 border-red-200 text-red-700' : 'bg-red-950/30 hover:bg-red-950/50 border-red-900/60 text-red-400'
+                      }`}
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Log Out of Account</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
           </div>
+
+          {/* Dedicated Navbar Log Out Button on the Right */}
+          <button
+            onClick={() => store.logout()}
+            className={`p-2 sm:px-2.5 sm:py-1.5 rounded-xl border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
+              isLight 
+                ? 'bg-slate-100 hover:bg-red-50 hover:border-red-300 text-slate-700 hover:text-red-700 border-slate-300' 
+                : 'bg-slate-900 hover:bg-red-950/40 hover:border-red-800 text-slate-300 hover:text-red-400 border-slate-800'
+            }`}
+            title="Log Out of CampusHustle"
+          >
+            <LogOut className="w-4 h-4 text-red-500" />
+            <span className="hidden md:inline">Log Out</span>
+          </button>
         </div>
       </div>
     </header>

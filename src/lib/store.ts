@@ -608,6 +608,16 @@ export class CampusHustleStore {
   logout() {
     this.isLoggedIn = false;
     this.user = INITIAL_USER;
+    this.subscription = null;
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(STORAGE_KEYS.IS_LOGGED_IN);
+        localStorage.removeItem(STORAGE_KEYS.USER);
+        localStorage.removeItem(STORAGE_KEYS.SUBSCRIPTION);
+      } catch (e) {
+        console.error('Error clearing localStorage on logout', e);
+      }
+    }
     this.notify();
   }
 
