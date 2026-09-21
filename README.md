@@ -1,25 +1,25 @@
-# 🎓 CampusHustle — Kenya Campus Money App
+#  CampusHustle — Kenya Campus Money App
 
 **CampusHustle** is a Next.js 14 web app that helps Kenyan university students earn income, manage their HELB runway, and access verified gig opportunities — all from campus.
 
 ---
 
-## ✨ Features
+##  Features
 
-- 🌍 **Global Remote Gigs** — Worldwide AI annotation, freelance, and tech tasks (Alignerr, DataAnnotation, Outlier.ai, Mindrift, OneForma, Clickworker)
-- 🇰🇪 **Kenyan Remote Jobs** — Local job portals (Fuzu, BrighterMonday, MyJobMag) with remote application
-- 💸 **Campus Escrow Gigs** — Post and accept student tasks with M-Pesa escrow protection
-- 📱 **PayHero M-Pesa Payments** — KSh 130 / semester subscription via M-Pesa STK push
-- 💵 **USD-denominated gig rewards** with KES equivalent display
-- 📊 **HELB Runway Calculator** — Track your semester balance and daily burn rate
-- 🌓 **Dark + Light Mode** — Full theme support across all pages
-- 📱 **Mobile-First Responsive Design** — Works on smartphone and laptop
-- 🔴 **Live Task Feed** — Auto-updating gig board with real timestamps
-- 👑 **Admin Dashboard** — Student registry, revenue metrics, subscription management
+- **Global Remote Gigs** — Worldwide AI annotation, freelance, and tech tasks (Alignerr, DataAnnotation, Outlier.ai, Mindrift, OneForma, Clickworker)
+- **Kenyan Remote Jobs** — Local job portals (Fuzu, BrighterMonday, MyJobMag) with remote application
+-  **Campus Escrow Gigs** — Post and accept student tasks with M-Pesa escrow protection
+- **PayHero M-Pesa Payments** — KSh 130 / semester subscription via M-Pesa STK push
+- **USD-denominated gig rewards** with KES equivalent display
+- **HELB Runway Calculator** — Track your semester balance and daily burn rate
+- **Dark + Light Mode** — Full theme support across all pages
+- **Mobile-First Responsive Design** — Works on smartphone and laptop
+- **Live Task Feed** — Auto-updating gig board with real timestamps
+- **Admin Dashboard** — Student registry, revenue metrics, subscription management
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ```bash
 # Clone the repo
@@ -77,16 +77,16 @@ NEXT_PUBLIC_ADMIN_EMAIL=your-email@example.com
 ### What You Need from PayHero
 | Credential | Where to Find | Required |
 |---|---|---|
-| API Key | Dashboard → Settings → API Keys | ✅ Yes |
-| API Secret | Dashboard → Settings → API Keys | ✅ Yes |
-| Channel ID | Dashboard → Payment Channels | ✅ Yes |
-| Callback URL | Set to your Vercel URL + `/api/payhero/callback` | ✅ Yes |
+| API Key | Dashboard → Settings → API Keys |  Yes |
+| API Secret | Dashboard → Settings → API Keys |  Yes |
+| Channel ID | Dashboard → Payment Channels |  Yes |
+| Callback URL | Set to your Vercel URL + `/api/payhero/callback` |  Yes |
 
 **Subscription Price**: KSh 130 / semester (configurable in `MpesaModal.tsx`)
 
 ---
 
-## 🌐 Deploy to Vercel
+##  Deploy to Vercel
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/liliankavengi/Campushustle)
 
@@ -97,7 +97,7 @@ NEXT_PUBLIC_ADMIN_EMAIL=your-email@example.com
 
 ---
 
-## 🗂️ Project Structure
+##  Project Structure
 
 ```
 src/
@@ -123,7 +123,7 @@ src/
 
 ---
 
-## 📋 Gig Categories
+## Gig Categories
 
 | Category | Examples | Currency |
 |---|---|---|
@@ -137,7 +137,7 @@ src/
 
 ---
 
-## 🧑‍💻 Tech Stack
+## Tech Stack
 
 - **Framework**: Next.js 14 (App Router)
 - **Styling**: Tailwind CSS
