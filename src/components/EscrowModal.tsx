@@ -50,13 +50,17 @@ export const EscrowModal: React.FC<EscrowModalProps> = ({ isOpen, onClose }) => 
 
       const parsedSkills = skillsText.split(',').map((s) => s.trim()).filter(Boolean);
 
+      const kesAmount = Number(rewardKes);
+      const usdAmount = Math.max(1, Math.round(kesAmount / 130));
+
       store.addGig({
         posterId: store.user.id,
         posterName: `${store.user.fullName} (${store.user.campus})`,
         title,
         description,
         category,
-        rewardKes: Number(rewardKes),
+        rewardUsd: usdAmount,
+        rewardKes: kesAmount,
         escrowStatus: 'HELD',
         originType: 'INTERNAL_ESCROW',
         campus: store.user.campus,

@@ -353,17 +353,22 @@ export const GigBoard: React.FC<GigBoardProps> = ({
                 </div>
               </div>
 
-              {/* Bottom Row: Bounty Reward + Action Button Opening Job Listing */}
+              {/* Bottom Row: Bounty Reward in USD + Action Button Opening Job Listing */}
               <div className={`mt-4 pt-3 border-t flex items-center justify-between gap-2 ${
                 isLight ? 'border-slate-200' : 'border-slate-800'
               }`}>
                 <div>
                   <span className={`text-[10px] uppercase font-bold block ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Compensation
+                    Compensation (USD)
                   </span>
-                  <span className="text-sm sm:text-base font-extrabold text-emerald-600">
-                    KSh {gig.rewardKes.toLocaleString()}
-                  </span>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-base sm:text-lg font-extrabold text-emerald-600">
+                      ${(gig.rewardUsd || Math.round((gig.rewardKes || 2600) / 130)).toLocaleString()}
+                    </span>
+                    <span className={`text-[11px] font-mono ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                      (~KSh {(gig.rewardKes || gig.rewardUsd * 130).toLocaleString()})
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -447,16 +452,21 @@ export const GigBoard: React.FC<GigBoardProps> = ({
 
             {/* Modal Body */}
             <div className="p-5 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-              {/* Reward and Platform Card */}
+              {/* Reward in USD and Platform Card */}
               <div className={`p-4 rounded-xl border flex items-center justify-between ${
                 isLight ? 'bg-emerald-50/50 border-emerald-200' : 'bg-slate-950 border-slate-800'
               }`}>
                 <div>
                   <span className={`text-[10px] uppercase font-bold tracking-wider ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                    Offering Reward
+                    Offering Compensation (USD)
                   </span>
-                  <div className="text-xl sm:text-2xl font-black text-emerald-600">
-                    KSh {activeGigModal.rewardKes.toLocaleString()}
+                  <div className="flex items-baseline gap-2">
+                    <div className="text-xl sm:text-2xl font-black text-emerald-600">
+                      ${(activeGigModal.rewardUsd || Math.round((activeGigModal.rewardKes || 2600) / 130)).toLocaleString()} USD
+                    </div>
+                    <span className={`text-xs font-mono font-semibold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                      (~KSh {(activeGigModal.rewardKes || activeGigModal.rewardUsd * 130).toLocaleString()})
+                    </span>
                   </div>
                 </div>
                 <div className="text-right">

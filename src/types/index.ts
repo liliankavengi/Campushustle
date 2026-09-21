@@ -59,7 +59,8 @@ export interface Gig {
   title: string;
   description: string;
   category: GigCategory;
-  rewardKes: number;
+  rewardUsd: number; // Compensation in USD ($)
+  rewardKes: number; // KES equivalent (KSh)
   escrowStatus: EscrowStatus;
   originType: OriginType;
   externalApplyUrl?: string;

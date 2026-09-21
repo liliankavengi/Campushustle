@@ -119,10 +119,10 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
             </div>
             <div>
               <h3 className="text-sm sm:text-base font-bold text-white">
-                Safaricom Daraja 2.0 M-Pesa Pass
+                PayHero M-Pesa Semester Pass
               </h3>
               <p className="text-[11px] text-emerald-100">
-                1 Semester (~120 Days) Unlimited Hustle Pass
+                KSh 130 • 1 Semester (~120 Days) Unlimited Hustle Pass
               </p>
             </div>
           </div>
