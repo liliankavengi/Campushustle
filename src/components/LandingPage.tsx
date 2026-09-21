@@ -50,15 +50,21 @@ export const LandingPage: React.FC = () => {
     setIsAuthModalOpen(true);
   };
 
-  const handleLaunchClick = (e: React.MouseEvent) => {
+  const handleLaunchClick = (e?: React.MouseEvent) => {
     if (!isLoggedIn) {
-      e.preventDefault();
-      const element = document.getElementById('signup-section');
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      } else {
-        openAuth('SIGN_UP');
-      }
+      if (e) e.preventDefault();
+      openAuth('SIGN_UP');
+    } else {
+      router.push('/app');
+    }
+  };
+
+  const handleApplyGigFromLanding = (gigTitle: string) => {
+    if (!isLoggedIn) {
+      openAuth('SIGN_UP');
+    } else if (!store.hasActivePass()) {
+      setPaywallFeatureName(`Unlock Application & Contacts for "${gigTitle}"`);
+      setIsPaywallOpen(true);
     } else {
       router.push('/app');
     }
@@ -366,7 +372,7 @@ export const LandingPage: React.FC = () => {
                       KSh {gig.rewardKes.toLocaleString()}
                     </span>
                     <button
-                      onClick={handleLaunchClick}
+                      onClick={() => handleApplyGigFromLanding(gig.title)}
                       className="text-xs text-emerald-600 font-bold flex items-center gap-1 hover:underline cursor-pointer"
                     >
                       <span>Apply Now</span>

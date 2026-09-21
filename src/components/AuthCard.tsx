@@ -43,14 +43,33 @@ export const AuthCard: React.FC<AuthCardProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [authSuccessMsg, setAuthSuccessMsg] = useState<string | null>(null);
 
+  const [validationError, setValidationError] = useState<string | null>(null);
   const campuses: CampusName[] = ['MMU', 'UoN', 'KU', 'JKUAT', 'Strathmore', 'Egerton', 'Moi'];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setValidationError(null);
+
+    if (mode === 'SIGN_UP' && (!fullName.trim() || fullName.trim().length < 2)) {
+      setValidationError('Please enter your full student name.');
+      return;
+    }
+
+    const cleanInput = emailOrPhone.trim();
+    if (!cleanInput || cleanInput.length < 5) {
+      setValidationError('Please enter a valid campus email or Safaricom phone number.');
+      return;
+    }
+
+    if (!password || password.length < 6) {
+      setValidationError('Password must be at least 6 characters.');
+      return;
+    }
+
     setIsLoading(true);
 
     setTimeout(() => {
-      store.authenticateUser(fullName || 'Campus Hustler', emailOrPhone || 'student@campus.ke', campus, false);
+      store.authenticateUser(fullName.trim(), cleanInput, campus, false);
       setIsLoading(false);
       setAuthSuccessMsg(mode === 'SIGN_UP' ? 'Account created! Launching application...' : 'Signed in! Launching application...');
       
@@ -204,6 +223,13 @@ export const AuthCard: React.FC<AuthCardProps> = ({
 
         {/* Auth Form */}
         <form onSubmit={handleSubmit} className="space-y-3">
+          {validationError && (
+            <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-xs font-semibold flex items-center gap-1.5">
+              <span>⚠️</span>
+              <span>{validationError}</span>
+            </div>
+          )}
+
           {/* Full Name Field (Sign Up Only) */}
           {mode === 'SIGN_UP' && (
             <div>

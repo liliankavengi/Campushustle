@@ -11,7 +11,9 @@ import {
   AlertCircle,
   Zap,
   ShieldCheck,
-  Sparkles
+  Sparkles,
+  Minus,
+  Maximize2
 } from 'lucide-react';
 
 interface MpesaModalProps {
@@ -38,12 +40,14 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
   const [countdown, setCountdown] = useState(35);
   const [shakePhone, setShakePhone] = useState(false);
   const [isLivePayHero, setIsLivePayHero] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setStep('IDLE');
       setErrorMessage('');
       setReceiptNumber('');
+      setIsMinimized(false);
       if (!phoneNumber) {
         setPhoneNumber('0715516715');
       }
@@ -62,6 +66,44 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
   }, [step, countdown]);
 
   if (!isOpen) return null;
+
+  // Minimized Floating Widget
+  if (isMinimized) {
+    return (
+      <div className="fixed bottom-5 right-5 z-50 animate-in slide-in-from-bottom-5 duration-200">
+        <div className={`flex items-center gap-3 p-3 rounded-2xl border shadow-2xl backdrop-blur-md ${
+          isLight ? 'bg-white/95 border-emerald-300 text-slate-900 shadow-slate-300/60' : 'bg-slate-900/95 border-emerald-700 text-white shadow-black/80'
+        }`}>
+          <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold shadow-sm">
+            <Zap className="w-4 h-4 fill-white" />
+          </div>
+          <div className="text-left">
+            <div className="text-xs font-black flex items-center gap-1">
+              <span>Resume $1 Pass</span>
+              <span className="text-[10px] bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.2 rounded font-mono font-bold">KSh 130</span>
+            </div>
+            <span className={`text-[10px] block truncate max-w-[150px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+              {targetFeatureName}
+            </span>
+          </div>
+          <button 
+            onClick={() => setIsMinimized(false)}
+            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm cursor-pointer transition-all active:scale-95 flex items-center gap-1"
+          >
+            <Maximize2 className="w-3 h-3" />
+            <span>Expand</span>
+          </button>
+          <button 
+            onClick={onClose}
+            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg transition-colors cursor-pointer"
+            title="Close Pop-up"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleInitiateStk = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,11 +179,18 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-150">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-150"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          setIsMinimized(true);
+        }
+      }}
+    >
       <div className={`relative w-full max-w-lg rounded-2xl border shadow-2xl overflow-hidden transition-colors ${
         isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-slate-100'
       }`}>
-        {/* Header */}
+        {/* Header with Minimize and Close Buttons */}
         <div className="p-4 sm:p-5 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white shadow-inner">
@@ -157,12 +206,25 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-white/80 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+          <div className="flex items-center gap-1">
+            {/* Minimize Button */}
+            <button
+              onClick={() => setIsMinimized(true)}
+              className="text-white/80 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+              title="Minimize Pop-up"
+            >
+              <Minus className="w-4 h-4" />
+            </button>
+            {/* Close Button */}
+            <button
+              onClick={onClose}
+              className="text-white/80 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+              title="Close Pop-up"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Modal Body */}
