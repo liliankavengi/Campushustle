@@ -190,8 +190,8 @@ export class CampusHustleStore {
   students: User[] = INITIAL_STUDENT_ACCOUNTS;
   services: ServiceSubscriptionMetric[] = INITIAL_SERVICE_METRICS;
   
-  // Real-time automatic task update engine
-  isAutoUpdating: boolean = true;
+  // Real-time task update engine (clean live mode)
+  isAutoUpdating: boolean = false;
   lastTaskLaunchedAt: string = new Date().toISOString();
   nextAutoUpdateSeconds: number = 25;
   taskPoolIndex: number = 0;
@@ -204,7 +204,6 @@ export class CampusHustleStore {
   private constructor() {
     if (typeof window !== 'undefined') {
       this.loadFromStorage();
-      this.startAutoTaskEngine();
     }
   }
 
@@ -552,6 +551,18 @@ export class CampusHustleStore {
           subscriptionStatus: 'ACTIVE',
           subscribedService: '1-Semester All-Access Hustle Pass ($1 Paid)',
         };
+
+        // Real-time update to student registry
+        this.students = this.students.map((s) => {
+          if (s.id === this.user.id || (this.user.email && s.email === this.user.email)) {
+            return {
+              ...s,
+              subscriptionStatus: 'ACTIVE',
+              subscribedService: '1-Semester All-Access Hustle Pass ($1 Paid)',
+            };
+          }
+          return s;
+        });
 
         this.services = this.services.map((srv) => {
           if (srv.serviceId === 'srv-all-access') {
