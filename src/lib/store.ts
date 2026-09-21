@@ -476,42 +476,19 @@ export class CampusHustleStore {
 
     const newUser: User = {
       id: `usr-${campus.toLowerCase()}-${Math.floor(10000 + Math.random() * 90000)}`,
-      phoneNumber: emailOrPhone.includes('@') ? `2547${Math.floor(10000000 + Math.random() * 89999999)}` : emailOrPhone,
+      phoneNumber: emailOrPhone.includes('@') ? `254715516715` : emailOrPhone,
       email: emailOrPhone.includes('@') ? emailOrPhone : undefined,
       fullName: fullName || (isGoogle ? 'Verified Google Scholar' : 'Campus Hustler'),
       campus,
       isVerified: true,
       createdAt: new Date().toISOString(),
-      subscribedService: '1-Semester All-Access Hustle Pass',
-      subscriptionStatus: 'ACTIVE',
+      subscribedService: 'Free Tier (Locked)',
+      subscriptionStatus: 'PENDING',
     };
 
     this.user = newUser;
     this.students = [newUser, ...this.students];
-
-    const expires = new Date();
-    expires.setDate(expires.getDate() + 120);
-    this.subscription = {
-      id: `sub-auth-${Date.now()}`,
-      userId: newUser.id,
-      amount: 130,
-      mpesaReceipt: `GOOG${Math.floor(10000000 + Math.random() * 90000000)}`,
-      status: 'ACTIVE',
-      serviceType: 'SEMESTER_ALL_ACCESS',
-      expiresAt: expires.toISOString(),
-      createdAt: new Date().toISOString(),
-    };
-
-    this.services = this.services.map((srv) => {
-      if (srv.serviceId === 'srv-all-access') {
-        return {
-          ...srv,
-          subscriberCount: srv.subscriberCount + 1,
-          revenueKes: srv.revenueKes + 130,
-        };
-      }
-      return srv;
-    });
+    this.subscription = null;
 
     this.notify();
     return newUser;
@@ -568,6 +545,12 @@ export class CampusHustleStore {
           serviceType: 'SEMESTER_ALL_ACCESS',
           expiresAt: expires.toISOString(),
           createdAt: new Date().toISOString(),
+        };
+
+        this.user = {
+          ...this.user,
+          subscriptionStatus: 'ACTIVE',
+          subscribedService: '1-Semester All-Access Hustle Pass ($1 Paid)',
         };
 
         this.services = this.services.map((srv) => {

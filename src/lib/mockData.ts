@@ -2,13 +2,13 @@ import { Gig, MmfFund, FinancialLog, User, ServiceSubscriptionMetric } from '../
 
 export const INITIAL_USER: User = {
   id: 'usr-mmu-04289',
-  phoneNumber: '254712345678',
+  phoneNumber: '254715516715',
   fullName: 'Brian Kiprono',
   campus: 'MMU',
   isVerified: true,
   createdAt: '2026-09-01T08:00:00Z',
-  subscribedService: '1-Semester All-Access Pass',
-  subscriptionStatus: 'ACTIVE',
+  subscribedService: 'Free Tier (Unpaid)',
+  subscriptionStatus: 'PENDING',
 };
 
 export const INITIAL_STUDENT_ACCOUNTS: User[] = [
