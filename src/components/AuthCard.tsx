@@ -35,10 +35,10 @@ export const AuthCard: React.FC<AuthCardProps> = ({
   const isLight = store.theme === 'light';
 
   const [mode, setMode] = useState<'SIGN_IN' | 'SIGN_UP'>(initialMode);
-  const [fullName, setFullName] = useState('Alex Rivera');
-  const [emailOrPhone, setEmailOrPhone] = useState('alex.rivera@students.mmu.ac.ke');
+  const [fullName, setFullName] = useState('');
+  const [emailOrPhone, setEmailOrPhone] = useState('');
   const [campus, setCampus] = useState<CampusName>('MMU');
-  const [password, setPassword] = useState('campusPass123!');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [authSuccessMsg, setAuthSuccessMsg] = useState<string | null>(null);
@@ -50,7 +50,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({
     setIsLoading(true);
 
     setTimeout(() => {
-      store.authenticateUser(fullName, emailOrPhone, campus, false);
+      store.authenticateUser(fullName || 'Campus Hustler', emailOrPhone || 'student@campus.ke', campus, false);
       setIsLoading(false);
       setAuthSuccessMsg(mode === 'SIGN_UP' ? 'Account created! Launching application...' : 'Signed in! Launching application...');
       
@@ -67,7 +67,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({
   const handleGoogleAuth = () => {
     setIsLoading(true);
     setTimeout(() => {
-      store.authenticateUser('Alex Rivera', 'alex.rivera.google@gmail.com', 'MMU', true);
+      store.authenticateUser('Google Scholar', 'scholar.student@gmail.com', 'MMU', true);
       setIsLoading(false);
       setAuthSuccessMsg('Authenticated with Google! Launching application...');
       
@@ -216,7 +216,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="e.g. Alex Rivera"
+                placeholder="Enter your full name"
                 required
                 className={`w-full px-3.5 py-2 rounded-xl text-xs sm:text-sm border focus:outline-none focus:border-emerald-500 transition-colors ${
                   isLight 
