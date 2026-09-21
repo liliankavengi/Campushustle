@@ -109,9 +109,22 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
 
   const handleInitiateStk = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleaned = phoneNumber.replace(/\s+/g, '').replace(/^\+254/, '0');
-    if (!cleaned || cleaned.length < 10 || !/^(07|01|254)\d+/.test(cleaned)) {
-      setErrorMessage('Enter a valid Safaricom number — e.g. 0715 516 715');
+    let cleaned = phoneNumber.trim().replace(/\s+/g, '').replace(/[-+]/g, '');
+    
+    // Normalize format to 254XXXXXXXXX
+    let intlPhone = '';
+    if (cleaned.startsWith('254')) {
+      intlPhone = cleaned;
+    } else if (cleaned.startsWith('0')) {
+      intlPhone = '254' + cleaned.substring(1);
+    } else if (cleaned.startsWith('7') || cleaned.startsWith('1')) {
+      intlPhone = '254' + cleaned;
+    } else {
+      intlPhone = cleaned;
+    }
+
+    if (!intlPhone || intlPhone.length !== 12 || !/^254[71]\d{8}$/.test(intlPhone)) {
+      setErrorMessage('Enter a valid Safaricom/Airtel number (e.g. 0715516715 or 715516715)');
       setShakePhone(true);
       setTimeout(() => setShakePhone(false), 600);
       return;
@@ -120,14 +133,6 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
     setStep('SENDING');
     setCountdown(40);
     setErrorMessage('');
-
-    // Convert 07XXXXXXXX → 2547XXXXXXXX for Daraja/PayHero
-    let intlPhone = cleaned;
-    if (intlPhone.startsWith('0')) {
-      intlPhone = '254' + intlPhone.substring(1);
-    } else if (!intlPhone.startsWith('254')) {
-      intlPhone = '254' + intlPhone;
-    }
 
     try {
       // Record transaction in store
@@ -282,29 +287,43 @@ export const MpesaModal: React.FC<MpesaModalProps> = ({
               <form onSubmit={handleInitiateStk} className="space-y-3.5">
                 <div>
                   <label className={`block text-xs font-bold mb-1.5 ${isLight ? 'text-slate-700' : 'text-slate-200'}`}>
-                    📱 Key in your M-Pesa Phone Number for PIN Prompt
+                    📱 Key in your M-Pesa Phone Number
                   </label>
-                  <div className={`relative transition-all duration-150 ${shakePhone ? 'animate-bounce' : ''}`}>
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                      <span className={`text-xs font-bold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>🇰🇪 +254</span>
+                  
+                  {/* Clean Flex Input Group without absolute overlaps */}
+                  <div className={`flex items-stretch rounded-xl border-2 overflow-hidden transition-all duration-150 ${
+                    shakePhone
+                      ? 'border-red-500 bg-red-50 dark:bg-red-950/20'
+                      : errorMessage
+                      ? 'border-red-400 focus-within:border-red-500'
+                      : 'border-emerald-500/60 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20'
+                  } ${isLight ? 'bg-white' : 'bg-slate-950'}`}>
+                    {/* Country Code Prefix */}
+                    <div className={`flex items-center gap-1 px-3 border-r select-none flex-shrink-0 ${
+                      isLight ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-900 border-slate-800 text-slate-300'
+                    }`}>
+                      <span className="text-base">🇰🇪</span>
+                      <span className="text-xs font-mono font-bold">+254</span>
                     </div>
+
+                    {/* Phone Number Input */}
                     <input
                       type="tel"
                       value={phoneNumber}
-                      onChange={(e) => { setPhoneNumber(e.target.value); setErrorMessage(''); }}
-                      placeholder="07XXXXXXXX or 01XXXXXXXX"
+                      onChange={(e) => { 
+                        setPhoneNumber(e.target.value); 
+                        setErrorMessage(''); 
+                      }}
+                      placeholder="e.g. 0715516715 or 715516715"
                       required
                       autoFocus
                       inputMode="numeric"
-                      className={`w-full pl-20 pr-4 py-3 border-2 rounded-xl text-sm font-mono font-bold focus:outline-none transition-colors ${
-                        shakePhone
-                          ? 'border-red-500 bg-red-50 dark:bg-red-950/20'
-                          : errorMessage
-                          ? 'border-red-400 focus:border-red-500'
-                          : 'border-emerald-500/60 focus:border-emerald-500'
-                      } ${isLight ? 'bg-white text-slate-900 placeholder:text-slate-400' : 'bg-slate-950 text-white placeholder:text-slate-600'}`}
+                      className={`w-full px-3 py-3 text-sm font-mono font-bold bg-transparent outline-none ${
+                        isLight ? 'text-slate-900 placeholder:text-slate-400' : 'text-white placeholder:text-slate-600'
+                      }`}
                     />
                   </div>
+
                   <p className={`text-[11px] mt-1.5 flex items-center gap-1 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                     <span>💬</span>
                     <span>An M-Pesa prompt for <strong>KSh 130 (~$1)</strong> will appear on this handset.</span>
