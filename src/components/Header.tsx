@@ -69,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'RUNWAY', label: 'HELB & Daily Runway', icon: <Flame className="w-4 h-4 text-emerald-600" />, badge: 'Burn Engine' },
     { id: 'MMF', label: 'MMF Yield Trackers', icon: <TrendingUp className="w-4 h-4 text-emerald-600" />, badge: '16.85% EAR' },
     { id: 'LEDGER', label: 'Daraja M-Pesa Ledger', icon: <History className="w-4 h-4 text-slate-500" />, badge: `${store.transactions.length} Txs` },
-    { id: 'ADMIN', label: 'Admin Portal', icon: <BarChart3 className="w-4 h-4 text-emerald-600" />, badge: `${store.students.length} Accounts` },
+
   ];
 
   return (
@@ -142,18 +142,7 @@ export const Header: React.FC<HeaderProps> = ({
             {isLight ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
           </button>
 
-          {/* Admin Portal Link */}
-          <Link
-            href="/admin"
-            className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
-              isLight 
-                ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-800' 
-                : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300'
-            }`}
-          >
-            <BarChart3 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Admin</span>
-          </Link>
+
 
           {/* Modules Dropdown */}
           <div className="relative" ref={dropdownRef}>
@@ -205,15 +194,7 @@ export const Header: React.FC<HeaderProps> = ({
                 ))}
 
                 <div className={`pt-2 border-t grid grid-cols-2 gap-1 ${isLight ? 'border-slate-100' : 'border-slate-800'}`}>
-                  <Link
-                    href="/admin"
-                    onClick={() => setDropdownOpen(false)}
-                    className={`py-1.5 text-[11px] font-bold rounded-lg text-center transition-colors border ${
-                      isLight ? 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200' : 'bg-slate-800 hover:bg-slate-750 text-slate-200 border-slate-700'
-                    }`}
-                  >
-                    Admin Gate
-                  </Link>
+  
                   <Link
                     href="/"
                     onClick={() => setDropdownOpen(false)}

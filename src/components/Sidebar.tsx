@@ -147,15 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <History className="w-4 h-4" />
             </button>
 
-            <Link
-              href="/admin"
-              className={`p-2.5 rounded-xl transition-all block ${
-                isLight ? 'text-slate-600 hover:bg-slate-100' : 'text-slate-400 hover:text-white hover:bg-slate-900'
-              }`}
-              title="Admin Portal"
-            >
-              <BarChart3 className="w-4 h-4 text-emerald-600" />
-            </Link>
+
           </div>
         </div>
 
@@ -328,24 +320,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </span>
             </button>
 
-            {/* Pillar 5: Admin Dashboard Link */}
-            <Link
-              href="/admin"
-              onClick={onCloseMobile}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                isLight ? 'text-slate-800 hover:bg-slate-100 border-slate-200' : 'text-slate-300 hover:bg-slate-900 hover:text-white border-slate-800'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <BarChart3 className="w-4 h-4 text-emerald-600" />
-                <span>Admin Portal</span>
-              </div>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
-                isLight ? 'bg-slate-200 text-slate-700' : 'bg-slate-850 text-slate-400'
-              }`}>
-                {store.students.length} Accounts
-              </span>
-            </Link>
+
           </div>
 
           {/* Section: Category Classifications */}

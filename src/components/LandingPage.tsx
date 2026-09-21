@@ -555,8 +555,6 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <Link href="/admin" className="hover:text-emerald-600 transition-colors">Admin Gate</Link>
-            <span>•</span>
             <button onClick={() => setIsArchitectureOpen(true)} className="hover:text-emerald-600 transition-colors">
               Daraja 2.0 Spec
             </button>
