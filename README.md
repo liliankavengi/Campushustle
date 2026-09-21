@@ -60,6 +60,31 @@ Open [http://localhost:3000](http://localhost:3000) with your browser.
 
 ---
 
-##  Deployment
+## 📦 Hosting on Vercel (1-Click & Git Integration)
 
-Deployable with 1-click on [Vercel](https://vercel.com) or [Netlify](https://netlify.com).
+Deploying CampusHustle to Vercel is seamless:
+
+### Option 1: Vercel Web Dashboard (Recommended)
+1. Go to [vercel.com](https://vercel.com) and log in with your GitHub account.
+2. Click **"Add New..."** -> **"Project"**.
+3. Select the repository: `liliankavengi/Campushustle`.
+4. Vercel will automatically detect **Next.js**:
+   - **Framework Preset**: Next.js
+   - **Root Directory**: `./`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `.next`
+5. Click **"Deploy"**. Your application will be live at `https://campushustle.vercel.app` (or custom subdomain) in under 60 seconds!
+
+### Option 2: Deploy via Vercel CLI
+```bash
+# Install Vercel CLI globally
+npm install -g vercel
+
+# Deploy directly from terminal
+vercel
+```
+
+---
+
+## 🔒 Security & Admin Access
+The Super Administrator portal is located at `/admin` and is restricted to `liliankavengi502@gmail.com`. Ensure you configure any custom environment variables in Vercel under **Project Settings > Environment Variables** if overriding defaults.
