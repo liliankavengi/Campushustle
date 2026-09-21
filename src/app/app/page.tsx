@@ -4,8 +4,12 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useCampusStore } from '../../lib/store';
 import { Header } from '../../components/Header';
-import { Sidebar } from '../../components/Sidebar';
+import { Sidebar, AppTabType } from '../../components/Sidebar';
 import { GigBoard } from '../../components/GigBoard';
+import { ApplicationTracker } from '../../components/ApplicationTracker';
+import { SavedGigsView } from '../../components/SavedGigsView';
+import { SkillGapAnalyzer } from '../../components/SkillGapAnalyzer';
+import { CvBuilderModal } from '../../components/CvBuilderModal';
 import { RunwayEngine } from '../../components/RunwayEngine';
 import { YieldSparklines } from '../../components/YieldSparklines';
 import { GuidesModule } from '../../components/GuidesModule';
@@ -13,6 +17,8 @@ import { MpesaModal } from '../../components/MpesaModal';
 import { EscrowModal } from '../../components/EscrowModal';
 import { DarajaArchitectureInspector } from '../../components/DarajaArchitectureInspector';
 import { AuthCard } from '../../components/AuthCard';
+import { ExternalRedirectModal } from '../../components/ExternalRedirectModal';
+import { Gig } from '../../types';
 import { 
   Briefcase, 
   Flame, 
@@ -20,16 +26,13 @@ import {
   History, 
   ShieldCheck, 
   Lock, 
-  Smartphone, 
-  CheckCircle2,
-  BarChart3,
-  Home,
-  Zap,
-  ArrowLeft,
-  Sparkles,
-  Globe,
-  Star,
-  BookOpen
+  CheckSquare, 
+  Bookmark, 
+  BrainCircuit, 
+  Zap, 
+  ArrowLeft, 
+  Globe, 
+  BookOpen 
 } from 'lucide-react';
 
 export default function StudentAppPage() {
@@ -38,7 +41,7 @@ export default function StudentAppPage() {
   const isLight = store.theme === 'light';
   const hasPass = store.hasActivePass();
 
-  const [activeTab, setActiveTab] = useState<'GIGS' | 'RUNWAY' | 'MMF' | 'LEDGER' | 'GUIDES' | 'ADMIN'>('GIGS');
+  const [activeTab, setActiveTab] = useState<AppTabType>('GIGS');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [deviceFilter, setDeviceFilter] = useState<'ALL' | 'SMARTPHONE_OK' | 'LAPTOP_REQUIRED'>('ALL');
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState(false);
@@ -49,6 +52,8 @@ export default function StudentAppPage() {
   const [paywallFeatureName, setPaywallFeatureName] = useState<string>('Full CampusHustle Access');
   const [isEscrowModalOpen, setIsEscrowModalOpen] = useState(false);
   const [isArchitectureOpen, setIsArchitectureOpen] = useState(false);
+  const [isCvBuilderOpen, setIsCvBuilderOpen] = useState(false);
+  const [activeRedirectGig, setActiveRedirectGig] = useState<Gig | null>(null);
 
   const handleTriggerPaywall = (featureName: string) => {
     setPaywallFeatureName(featureName);
@@ -92,10 +97,10 @@ export default function StudentAppPage() {
                 Sign In Required
               </span>
               <h1 className="text-xl sm:text-2xl font-extrabold">
-                Sign In or Sign Up to Launch App
+                Access Student Hustle Hub
               </h1>
               <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                Create your student account or continue with Google to access your gigs board, runway calculator, and MMF yield charts.
+                Sign in with phone or test credentials to search opportunities, track applications, and manage financial runway.
               </p>
             </div>
             <AuthCard
@@ -118,15 +123,11 @@ export default function StudentAppPage() {
   const netBalance = Math.max(0, totalIncome - totalExpense);
   const daysOfRunway = Math.floor(netBalance / 350);
 
-  const escrowLockedKes = store.gigs
-    .filter((g) => g.escrowStatus === 'HELD')
-    .reduce((acc, g) => acc + g.rewardKes, 0);
-
   return (
     <div className={`min-h-screen flex flex-col pb-16 lg:pb-0 transition-colors ${
       isLight ? 'bg-slate-50 text-slate-900' : 'bg-slate-950 text-slate-100'
     }`}>
-      {/* Compact Top Header */}
+      {/* Top Navigation Header */}
       <Header
         onOpenPaywall={() => handleTriggerPaywall('Full CampusHustle All-Access Pass')}
         onOpenEscrowModal={() => setIsEscrowModalOpen(true)}
@@ -149,47 +150,88 @@ export default function StudentAppPage() {
           onOpenPaywall={() => handleTriggerPaywall('Full CampusHustle All-Access Pass')}
           onOpenEscrowModal={() => setIsEscrowModalOpen(true)}
           onOpenArchitecture={() => setIsArchitectureOpen(true)}
+          onOpenCvBuilder={() => setIsCvBuilderOpen(true)}
           isOpenMobile={isSidebarOpenMobile}
           onCloseMobile={() => setIsSidebarOpenMobile(false)}
           isCollapsed={isSidebarCollapsed}
           setIsCollapsed={setIsSidebarCollapsed}
         />
 
-        {/* Main Content Area — Opens freely for exploration */}
+        {/* Main Content Area */}
         <main className="flex-1 min-w-0 px-3 sm:px-4 lg:px-5 py-3 space-y-3">
-          {/* Quick Metrics Ribbon (Clickable to switch modules freely) */}
+          {/* Quick Metrics Ribbon */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5">
             <div 
               onClick={() => setActiveTab('GIGS')}
-              className={`rounded-xl p-3 border transition-all cursor-pointer ${
+              className={`rounded-2xl p-3 border transition-all cursor-pointer ${
                 activeTab === 'GIGS' 
                   ? isLight ? 'border-emerald-500 bg-emerald-50/40 shadow-xs ring-1 ring-emerald-500/20' : 'border-emerald-500 bg-slate-900 shadow-sm ring-1 ring-emerald-500/20'
                   : isLight ? 'bg-white border-slate-200 hover:border-slate-300' : 'bg-slate-900 border-slate-800 hover:border-slate-700'
               }`}
             >
               <div className="flex items-center justify-between text-[11px]">
-                <span className={isLight ? 'text-slate-500' : 'text-slate-400'}>Campus Gigs</span>
+                <span className={isLight ? 'text-slate-500' : 'text-slate-400'}>Aggregated Gigs</span>
                 <Briefcase className="w-3.5 h-3.5 text-emerald-600" />
               </div>
               <div className="text-base sm:text-lg font-extrabold mt-0.5">
                 {store.gigs.length} <span className={`text-[10px] font-normal ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Live</span>
               </div>
               <span className="text-[10px] text-emerald-600 font-semibold block truncate">
-                {store.gigs.filter((g) => g.originType === 'INTERNAL_ESCROW').length} Escrow Secured
+                5 Source Feeds Active
+              </span>
+            </div>
+
+            <div 
+              onClick={() => setActiveTab('TRACKER')}
+              className={`rounded-2xl p-3 border transition-all cursor-pointer ${
+                activeTab === 'TRACKER' 
+                  ? isLight ? 'border-blue-500 bg-blue-50/40 shadow-xs ring-1 ring-blue-500/20' : 'border-blue-500 bg-slate-900 shadow-sm ring-1 ring-blue-500/20'
+                  : isLight ? 'bg-white border-slate-200 hover:border-slate-300' : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+              }`}
+            >
+              <div className="flex items-center justify-between text-[11px]">
+                <span className={isLight ? 'text-slate-500' : 'text-slate-400'}>My Applications</span>
+                <CheckSquare className="w-3.5 h-3.5 text-blue-500" />
+              </div>
+              <div className="text-base sm:text-lg font-extrabold mt-0.5 text-blue-600">
+                {store.applications.length} <span className={`text-[10px] font-normal ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Tracked</span>
+              </div>
+              <span className={`text-[10px] block truncate ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                {store.applications.filter(a => a.status === 'APPLIED' || a.status === 'INTERVIEWING').length} In Pipeline
+              </span>
+            </div>
+
+            <div 
+              onClick={() => setActiveTab('SKILLS')}
+              className={`rounded-2xl p-3 border transition-all cursor-pointer ${
+                activeTab === 'SKILLS' 
+                  ? isLight ? 'border-purple-500 bg-purple-50/40 shadow-xs ring-1 ring-purple-500/20' : 'border-purple-500 bg-slate-900 shadow-sm ring-1 ring-purple-500/20'
+                  : isLight ? 'bg-white border-slate-200 hover:border-slate-300' : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+              }`}
+            >
+              <div className="flex items-center justify-between text-[11px]">
+                <span className={isLight ? 'text-slate-500' : 'text-slate-400'}>Skill Match Matrix</span>
+                <BrainCircuit className="w-3.5 h-3.5 text-purple-500" />
+              </div>
+              <div className="text-base sm:text-lg font-extrabold mt-0.5 text-purple-600">
+                {store.user.profile?.skills?.length || 3} <span className={`text-[10px] font-normal ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Skills</span>
+              </div>
+              <span className="text-[10px] text-purple-600 font-semibold block truncate">
+                AI Gap Analysis Ready
               </span>
             </div>
 
             <div 
               onClick={() => setActiveTab('RUNWAY')}
-              className={`rounded-xl p-3 border transition-all cursor-pointer ${
+              className={`rounded-2xl p-3 border transition-all cursor-pointer ${
                 activeTab === 'RUNWAY' 
-                  ? isLight ? 'border-emerald-500 bg-emerald-50/40 shadow-xs ring-1 ring-emerald-500/20' : 'border-emerald-500 bg-slate-900 shadow-sm ring-1 ring-emerald-500/20'
+                  ? isLight ? 'border-rose-500 bg-rose-50/40 shadow-xs ring-1 ring-rose-500/20' : 'border-rose-500 bg-slate-900 shadow-sm ring-1 ring-rose-500/20'
                   : isLight ? 'bg-white border-slate-200 hover:border-slate-300' : 'bg-slate-900 border-slate-800 hover:border-slate-700'
               }`}
             >
               <div className="flex items-center justify-between text-[11px]">
                 <span className={isLight ? 'text-slate-500' : 'text-slate-400'}>HELB Runway</span>
-                <Flame className="w-3.5 h-3.5 text-emerald-600" />
+                <Flame className="w-3.5 h-3.5 text-rose-500" />
               </div>
               <div className="text-base sm:text-lg font-extrabold mt-0.5">
                 {daysOfRunway} <span className={`text-[10px] font-normal ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Days</span>
@@ -198,49 +240,9 @@ export default function StudentAppPage() {
                 KSh {netBalance.toLocaleString()} Net Left
               </span>
             </div>
-
-            <div 
-              onClick={() => setActiveTab('MMF')}
-              className={`rounded-xl p-3 border transition-all cursor-pointer ${
-                activeTab === 'MMF' 
-                  ? isLight ? 'border-emerald-500 bg-emerald-50/40 shadow-xs ring-1 ring-emerald-500/20' : 'border-emerald-500 bg-slate-900 shadow-sm ring-1 ring-emerald-500/20'
-                  : isLight ? 'bg-white border-slate-200 hover:border-slate-300' : 'bg-slate-900 border-slate-800 hover:border-slate-700'
-              }`}
-            >
-              <div className="flex items-center justify-between text-[11px]">
-                <span className={isLight ? 'text-slate-500' : 'text-slate-400'}>Top MMF Yield</span>
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-              </div>
-              <div className="text-base sm:text-lg font-extrabold mt-0.5">
-                16.85% <span className={`text-[10px] font-normal ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>EAR</span>
-              </div>
-              <span className="text-[10px] text-emerald-600 font-semibold block truncate">
-                Etica Wealth Daily Comp
-              </span>
-            </div>
-
-            <div 
-              onClick={() => setActiveTab('GUIDES')}
-              className={`rounded-xl p-3 border transition-all cursor-pointer ${
-                activeTab === 'GUIDES' 
-                  ? isLight ? 'border-emerald-500 bg-emerald-50/40 shadow-xs ring-1 ring-emerald-500/20' : 'border-emerald-500 bg-slate-900 shadow-sm ring-1 ring-emerald-500/20'
-                  : isLight ? 'bg-white border-slate-200 hover:border-slate-300' : 'bg-slate-900 border-slate-800 hover:border-slate-700'
-              }`}
-            >
-              <div className="flex items-center justify-between text-[11px]">
-                <span className={isLight ? 'text-slate-500' : 'text-slate-400'}>Hustle Playbooks</span>
-                <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
-              </div>
-              <div className="text-base sm:text-lg font-extrabold text-emerald-600 mt-0.5">
-                4 AI Guides
-              </div>
-              <span className={`text-[10px] block truncate ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                Prompts & Earning Maps
-              </span>
-            </div>
           </div>
 
-          {/* Module Views */}
+          {/* Tab Views */}
           {activeTab === 'GIGS' && (
             <GigBoard
               selectedCategory={selectedCategory}
@@ -251,11 +253,19 @@ export default function StudentAppPage() {
               onOpenEscrowModal={() => setIsEscrowModalOpen(true)}
             />
           )}
+          {activeTab === 'TRACKER' && <ApplicationTracker />}
+          {activeTab === 'SAVED' && (
+            <SavedGigsView
+              onOpenGigModal={() => {}}
+              onApplyExternal={(gig) => setActiveRedirectGig(gig)}
+            />
+          )}
+          {activeTab === 'SKILLS' && <SkillGapAnalyzer onOpenGuides={() => setActiveTab('GUIDES')} />}
           {activeTab === 'RUNWAY' && <RunwayEngine onOpenPaywall={handleTriggerPaywall} />}
           {activeTab === 'MMF' && <YieldSparklines onOpenPaywall={handleTriggerPaywall} />}
           {activeTab === 'GUIDES' && <GuidesModule onOpenPaywall={handleTriggerPaywall} />}
           {activeTab === 'LEDGER' && (
-            <div className={`rounded-xl p-4 border space-y-4 transition-colors ${
+            <div className={`rounded-2xl p-4 border space-y-4 transition-colors ${
               isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900 border-slate-800'
             }`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -333,6 +343,26 @@ export default function StudentAppPage() {
         </button>
 
         <button
+          onClick={() => setActiveTab('TRACKER')}
+          className={`flex flex-col items-center gap-0.5 text-[10px] font-bold cursor-pointer ${
+            activeTab === 'TRACKER' ? 'text-emerald-600' : 'hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <CheckSquare className="w-4 h-4" />
+          <span>Tracker</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('SKILLS')}
+          className={`flex flex-col items-center gap-0.5 text-[10px] font-bold cursor-pointer ${
+            activeTab === 'SKILLS' ? 'text-emerald-600' : 'hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <BrainCircuit className="w-4 h-4" />
+          <span>AI Skills</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('RUNWAY')}
           className={`flex flex-col items-center gap-0.5 text-[10px] font-bold cursor-pointer ${
             activeTab === 'RUNWAY' ? 'text-emerald-600' : 'hover:text-slate-900 dark:hover:text-white'
@@ -351,36 +381,6 @@ export default function StudentAppPage() {
           <TrendingUp className="w-4 h-4" />
           <span>MMF</span>
         </button>
-
-        <button
-          onClick={() => setActiveTab('GUIDES')}
-          className={`flex flex-col items-center gap-0.5 text-[10px] font-bold cursor-pointer ${
-            activeTab === 'GUIDES' ? 'text-emerald-600' : 'hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          <BookOpen className="w-4 h-4" />
-          <span>Guides</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('LEDGER')}
-          className={`flex flex-col items-center gap-0.5 text-[10px] font-bold cursor-pointer ${
-            activeTab === 'LEDGER' ? 'text-emerald-600' : 'hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          <History className="w-4 h-4" />
-          <span>Ledger</span>
-        </button>
-
-        {!hasPass && (
-          <button
-            onClick={() => handleTriggerPaywall('Full CampusHustle Access')}
-            className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-emerald-600 animate-pulse cursor-pointer"
-          >
-            <Lock className="w-4 h-4" />
-            <span>$1 Pass</span>
-          </button>
-        )}
       </nav>
 
       {/* Global Modals */}
@@ -398,6 +398,17 @@ export default function StudentAppPage() {
       <DarajaArchitectureInspector
         isOpen={isArchitectureOpen}
         onClose={() => setIsArchitectureOpen(false)}
+      />
+
+      <CvBuilderModal
+        isOpen={isCvBuilderOpen}
+        onClose={() => setIsCvBuilderOpen(false)}
+      />
+
+      <ExternalRedirectModal
+        isOpen={Boolean(activeRedirectGig)}
+        gig={activeRedirectGig}
+        onClose={() => setActiveRedirectGig(null)}
       />
     </div>
   );

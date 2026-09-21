@@ -10,6 +10,19 @@ export interface User {
   createdAt: string;
   subscribedService?: string;
   subscriptionStatus: SubscriptionStatus;
+  profile?: UserProfile;
+}
+
+export interface UserProfile {
+  skills: string[];
+  university: CampusName;
+  major?: string;
+  graduationYear?: number;
+  careerGoals: string[];
+  experienceLevel: ExperienceLevel;
+  preferredRemoteType: RemoteType | 'ANY';
+  weeklyHoursAvailable: number;
+  bio?: string;
 }
 
 export type SubscriptionStatus = 'PENDING' | 'ACTIVE' | 'EXPIRED';
@@ -45,13 +58,36 @@ export type GigCategory =
   | 'Tech & Design' 
   | 'Attachment & Internship'
   | 'Global Remote'
-  | 'Kenyan Remote';
+  | 'Kenyan Remote'
+  | 'Research & Writing'
+  | 'Microtask';
+
 export type EscrowStatus = 'UNFUNDED' | 'HELD' | 'RELEASED' | 'REFUNDED';
-export type OriginType = 'INTERNAL_ESCROW' | 'EXTERNAL_PARTNER' | 'SCRAPED';
+export type OriginType = 'INTERNAL_ESCROW' | 'EXTERNAL_PARTNER' | 'SCRAPED' | 'COMMUNITY_POSTED';
 export type DeviceRequirement = 'SMARTPHONE_OK' | 'LAPTOP_REQUIRED';
+export type RemoteType = 'REMOTE' | 'HYBRID' | 'ON_SITE';
+export type EmploymentType = 'FREELANCE' | 'PART_TIME' | 'INTERNSHIP' | 'MICROTASK' | 'FULL_TIME';
+export type ExperienceLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+export type VerificationStatus = 'VERIFIED_BY_CAMPUSHUSTLE' | 'COMMUNITY_INDEXED' | 'AWAITING_REVIEW';
+
+export interface JobSource {
+  id: string;
+  sourceName: string;
+  sourceType: 'KENYAN_PORTAL' | 'GLOBAL_REMOTE' | 'AI_LAB' | 'CAMPUS_CAREERS' | 'FREELANCE';
+  officialUrl: string;
+  ingestionMethod: 'API' | 'RSS_FEED' | 'PARTNER_FEED' | 'APPROVED_CRAWLER';
+  termsUrl: string;
+  isActive: boolean;
+  trustScore: number; // 0 - 100
+  lastSuccessfulSync?: string;
+  verifiedDomain: string;
+}
 
 export interface Gig {
   id: string;
+  sourceId?: string;
+  sourceJobId?: string;
+  companyName?: string;
   posterId?: string;
   posterName?: string;
   posterPhone?: string;
@@ -61,18 +97,81 @@ export interface Gig {
   category: GigCategory;
   rewardUsd: number; // Compensation in USD ($)
   rewardKes: number; // KES equivalent (KSh)
+  salaryMin?: number;
+  salaryMax?: number;
+  salaryCurrency?: 'USD' | 'KES';
   escrowStatus: EscrowStatus;
   originType: OriginType;
   externalApplyUrl?: string;
+  originalUrl?: string;
   campus?: CampusName | 'ALL';
+  location?: string;
+  remoteType?: RemoteType;
+  employmentType?: EmploymentType;
+  experienceLevel?: ExperienceLevel;
   deviceRequirement: DeviceRequirement;
   skills: string[];
   platformName?: string;
   qualificationGuide?: string;
+  summaryBullets?: string[];
+  scamRiskSignals?: string[];
+  verificationStatus?: VerificationStatus;
+  contentHash?: string;
+  publishedAt?: string;
+  expiresAt?: string;
+  lastSeenAt?: string;
   deadline?: string;
   createdAt: string;
   applicantCount: number;
   isFeatured?: boolean;
+  isKenyaEligible?: boolean;
+  isStudentAccepted?: boolean;
+}
+
+export type ApplicationStatus = 'PREPARING' | 'APPLIED' | 'INTERVIEWING' | 'ACCEPTED' | 'REJECTED';
+
+export interface ExternalApplication {
+  id: string;
+  gigId: string;
+  jobTitle: string;
+  companyName: string;
+  platformName: string;
+  externalUrl?: string;
+  status: ApplicationStatus;
+  appliedDate: string;
+  rewardUsd?: number;
+  rewardKes?: number;
+  notes?: string;
+  followUpDate?: string;
+  lastUpdated: string;
+}
+
+export interface SavedGig {
+  gigId: string;
+  savedAt: string;
+  notes?: string;
+}
+
+export interface JobReport {
+  id: string;
+  gigId: string;
+  jobTitle: string;
+  reporterId: string;
+  reason: 'SCAM_OR_FEE_REQUEST' | 'EXPIRED_LINK' | 'MISLEADING_INFO' | 'WRONG_CATEGORY' | 'OTHER';
+  details: string;
+  reportedAt: string;
+  status: 'PENDING_REVIEW' | 'RESOLVED' | 'DISMISSED';
+}
+
+export interface JobAlert {
+  id: string;
+  userId: string;
+  keyword: string;
+  category?: GigCategory | 'ALL';
+  remoteOnly: boolean;
+  minPayUsd?: number;
+  isActive: boolean;
+  createdAt: string;
 }
 
 export type MpesaPurpose = 'SUBSCRIPTION_PASS' | 'GIG_ESCROW' | 'B2C_PAYOUT';

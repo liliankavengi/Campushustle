@@ -2,7 +2,10 @@
 
 import React, { useState } from 'react';
 import { useCampusStore, formatLaunchTime } from '../lib/store';
-import { Gig } from '../types';
+import { Gig, RemoteType, EmploymentType, ExperienceLevel } from '../types';
+import { ExternalRedirectModal } from './ExternalRedirectModal';
+import { JobReportModal } from './JobReportModal';
+import { matchStudentProfile } from '../lib/aiEngine';
 import { 
   Briefcase, 
   Smartphone, 
@@ -17,19 +20,19 @@ import {
   Sparkles, 
   Bot, 
   MapPin,
-  Radio,
   RefreshCw,
-  Plus,
-  Play,
-  Pause,
   X,
-  ArrowRight,
-  Phone,
-  MessageSquare,
+  Bookmark,
+  BookmarkCheck,
+  ShieldAlert,
+  Flag,
   Globe,
-  Share2,
-  Zap,
-  Star
+  SlidersHorizontal,
+  ChevronDown,
+  Building2,
+  Calendar,
+  CheckCircle2,
+  Zap
 } from 'lucide-react';
 
 interface GigBoardProps {
@@ -53,614 +56,548 @@ export const GigBoard: React.FC<GigBoardProps> = ({
   const hasPass = store.hasActivePass();
   const isLight = store.theme === 'light';
 
+  // Filters State
   const [searchQuery, setSearchQuery] = useState('');
-  const [appliedGigs, setAppliedGigs] = useState<Set<string>>(new Set());
+  const [locationFilter, setLocationFilter] = useState<'ALL' | 'KENYA' | 'GLOBAL'>('ALL');
+  const [remoteTypeFilter, setRemoteTypeFilter] = useState<'ALL' | RemoteType>('ALL');
+  const [employmentFilter, setEmploymentFilter] = useState<'ALL' | EmploymentType>('ALL');
+  const [expFilter, setExpFilter] = useState<'ALL' | ExperienceLevel>('ALL');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Modals State
   const [activeGigModal, setActiveGigModal] = useState<Gig | null>(null);
+  const [redirectModalGig, setRedirectModalGig] = useState<Gig | null>(null);
+  const [reportingGig, setReportingGig] = useState<Gig | null>(null);
+  const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
+
+  const handleSyncSources = async () => {
+    try {
+      const result = await store.runLiveIngestionSync();
+      setSyncFeedback(`Ingestion sync complete! Synced ${result.sourcesSynced.length} sources, added ${result.newGigsAdded} new opportunities.`);
+      setTimeout(() => setSyncFeedback(null), 5000);
+    } catch {
+      setSyncFeedback('Source sync encountered a temporary network delay.');
+      setTimeout(() => setSyncFeedback(null), 4000);
+    }
+  };
 
   const categories: { label: string; value: string; count: number }[] = [
     { label: 'All Opportunities', value: 'ALL', count: store.gigs.length },
-    { label: 'Global Remote (Worldwide)', value: 'Global Remote', count: store.gigs.filter(g => g.category === 'Global Remote').length },
-    { label: 'Kenyan Remote Jobs', value: 'Kenyan Remote', count: store.gigs.filter(g => g.category === 'Kenyan Remote').length },
-    { label: 'Campus Escrow Gigs', value: 'INTERNAL_ESCROW', count: store.gigs.filter(g => g.originType === 'INTERNAL_ESCROW').length },
-    { label: 'AI Annotation', value: 'AI Annotation', count: store.gigs.filter(g => g.category === 'AI Annotation').length },
-    { label: 'Tutoring & Code', value: 'Tutoring', count: store.gigs.filter(g => g.category === 'Tutoring' || g.category === 'Tech & Design').length },
+    { label: 'AI Annotation & RLHF', value: 'AI Annotation', count: store.gigs.filter(g => g.category === 'AI Annotation').length },
+    { label: 'Global Remote', value: 'Global Remote', count: store.gigs.filter(g => g.category === 'Global Remote').length },
+    { label: 'Kenyan Remote', value: 'Kenyan Remote', count: store.gigs.filter(g => g.category === 'Kenyan Remote').length },
+    { label: 'Tech & Design', value: 'Tech & Design', count: store.gigs.filter(g => g.category === 'Tech & Design').length },
     { label: 'Attachments & Internships', value: 'Attachment & Internship', count: store.gigs.filter(g => g.category === 'Attachment & Internship').length },
+    { label: 'Campus Escrow Bounties', value: 'INTERNAL_ESCROW', count: store.gigs.filter(g => g.originType === 'INTERNAL_ESCROW').length },
   ];
 
   const filteredGigs = store.gigs
     .filter((gig) => {
+      // 1. Text Search
       const matchesSearch = 
         gig.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         gig.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (gig.platformName && gig.platformName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (gig.companyName && gig.companyName.toLowerCase().includes(searchQuery.toLowerCase())) ||
         gig.skills.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()));
 
+      // 2. Category
       let matchesCategory = true;
       if (selectedCategory === 'INTERNAL_ESCROW') {
         matchesCategory = gig.originType === 'INTERNAL_ESCROW';
-      } else if (selectedCategory === 'Tutoring') {
-        matchesCategory = gig.category === 'Tutoring' || gig.category === 'Tech & Design';
       } else if (selectedCategory !== 'ALL') {
         matchesCategory = gig.category === selectedCategory;
       }
 
+      // 3. Device
       const matchesDevice = deviceFilter === 'ALL' || gig.deviceRequirement === deviceFilter;
 
-      const matchesCampus = 
-        gig.campus === 'ALL' || 
-        gig.campus === store.user.campus || 
-        gig.originType === 'EXTERNAL_PARTNER' ||
-        gig.originType === 'SCRAPED';
+      // 4. Location Filter
+      let matchesLocation = true;
+      if (locationFilter === 'KENYA') {
+        matchesLocation = gig.category === 'Kenyan Remote' || gig.isKenyaEligible === true || Boolean(gig.location?.toLowerCase().includes('kenya'));
+      } else if (locationFilter === 'GLOBAL') {
+        matchesLocation = gig.category === 'Global Remote' || gig.category === 'AI Annotation';
+      }
 
-      return matchesSearch && matchesCategory && matchesDevice && matchesCampus;
+      // 5. Remote Type
+      const matchesRemote = remoteTypeFilter === 'ALL' || gig.remoteType === remoteTypeFilter;
+
+      // 6. Employment Type
+      const matchesEmployment = employmentFilter === 'ALL' || gig.employmentType === employmentFilter;
+
+      // 7. Experience Level
+      const matchesExp = expFilter === 'ALL' || gig.experienceLevel === expFilter;
+
+      return matchesSearch && matchesCategory && matchesDevice && matchesLocation && matchesRemote && matchesEmployment && matchesExp;
     })
-    // Sort featured gigs to top
     .sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0));
 
-  const handleOpenGig = (gig: Gig) => {
-    setActiveGigModal(gig);
-  };
-
-  const handleTakeBounty = (e: React.MouseEvent, gig: Gig) => {
+  const handleApplyClick = (e: React.MouseEvent, gig: Gig) => {
     e.stopPropagation();
-    if (!hasPass) {
-      onOpenPaywall(`Unlock Direct Contact & Bounties for "${gig.title}"`);
-      return;
-    }
-    store.applyToGig(gig.id);
-    setAppliedGigs((prev) => new Set(prev).add(gig.id));
-    setActiveGigModal(gig);
-  };
-
-  const handleDirectExternalOpen = (e: React.MouseEvent, gig: Gig) => {
-    e.stopPropagation();
-    if (!hasPass) {
-      onOpenPaywall(`Unlock Direct Application Portal for "${gig.title}"`);
-      return;
-    }
     if (gig.externalApplyUrl) {
-      window.open(gig.externalApplyUrl, '_blank', 'noopener,noreferrer');
-      store.applyToGig(gig.id);
-      setAppliedGigs((prev) => new Set(prev).add(gig.id));
+      setRedirectModalGig(gig);
     } else {
       setActiveGigModal(gig);
     }
   };
 
-  const handleTaskPulseLaunch = () => {
-    if (!hasPass) {
-      onOpenPaywall('Unlock Real-Time Live Feed Pulse & Auto-Dispatch');
-      return;
-    }
-    store.triggerManualTaskLaunch();
-  };
-
   return (
-    <div className="space-y-3">
-      {/* Monetization Banner (Revenue Stream 2 - Sponsored Listings) */}
-      <div className={`rounded-xl p-3 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 transition-colors ${
+    <div className="space-y-3.5 animate-fade-in">
+      {/* Top Banner: Ingestion Engine Status & Sync */}
+      <div className={`rounded-2xl p-3.5 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors ${
         isLight 
-          ? 'bg-gradient-to-r from-amber-50 via-emerald-50 to-white border-amber-200' 
-          : 'bg-gradient-to-r from-slate-900 via-amber-950/30 to-slate-900 border-amber-800/40'
+          ? 'bg-gradient-to-r from-emerald-50 via-teal-50 to-white border-emerald-200' 
+          : 'bg-gradient-to-r from-slate-900 via-emerald-950/20 to-slate-900 border-emerald-800/40'
       }`}>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-600 flex items-center justify-center flex-shrink-0">
-            <Zap className="w-4 h-4 fill-amber-500" />
-          </div>
-          <div className="text-xs">
-            <span className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-              <span>⚡ Need Your Campus Task Done Fast?</span>
-              <span className="text-[10px] bg-amber-500/20 px-1.5 py-0.2 rounded font-mono font-bold">+KSh 250</span>
-            </span>
-            <p className={`text-[11px] ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-              Feature your listing at the top of the feed to receive verified student applicants in under 45 minutes.
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={onOpenEscrowModal}
-          className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer whitespace-nowrap"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Post & Boost Gig</span>
-        </button>
-      </div>
-
-      {/* Live Auto-Updating Status Ribbon */}
-      <div className={`rounded-xl p-3 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 transition-colors ${
-        isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900 border-slate-800'
-      }`}>
-        {/* Left: Real-time update heartbeat */}
         <div className="flex items-center gap-2.5">
-          <div className="relative flex items-center justify-center">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping absolute" />
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 relative" />
+          <div className="w-8 h-8 rounded-xl bg-emerald-600/10 text-emerald-600 flex items-center justify-center flex-shrink-0">
+            <Globe className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-extrabold tracking-tight">
-                Live Campus Tasks Feed
-              </span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold border ${
-                isLight ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-800 text-emerald-400 border-slate-700'
-              }`}>
-                {store.gigs.length} Total Tasks
+              <span className="text-xs font-extrabold">Aggregated Opportunity Stream</span>
+              <span className="text-[10px] px-2 py-0.2 rounded-full bg-emerald-500/10 text-emerald-600 font-bold border border-emerald-500/20">
+                5 Sources Connected
               </span>
             </div>
-            <div className={`flex items-center gap-2 text-[11px] mt-0.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-              <span className="flex items-center gap-1 font-mono">
-                <Clock className="w-3 h-3 text-emerald-600" />
-                <span>Next auto-update in {store.nextAutoUpdateSeconds}s</span>
-              </span>
-              <span>•</span>
-              <span>Pulse: {store.isAutoUpdating ? 'Active' : 'Paused'}</span>
-            </div>
+            <p className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+              Indexed from Fuzu, BrighterMonday, RemoteOK, WeWorkRemotely, and global AI evaluation labs.
+            </p>
           </div>
         </div>
 
-        {/* Right: Controls to manually launch task pulse or toggle live auto-update */}
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <button
-            onClick={() => store.toggleAutoUpdate()}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border flex items-center gap-1.5 transition-colors ${
-              store.isAutoUpdating
-                ? isLight ? 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'
-                : 'bg-emerald-600 text-white border-emerald-500'
-            }`}
-          >
-            {store.isAutoUpdating ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-            <span>{store.isAutoUpdating ? 'Pause' : 'Resume'}</span>
-          </button>
-
-          <button
-            onClick={handleTaskPulseLaunch}
-            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-            title="Launch an immediate live task pulse"
-          >
-            <RefreshCw className="w-3 h-3" />
-            <span>Launch Task Pulse</span>
-          </button>
-
-          <button
-            onClick={onOpenEscrowModal}
-            className={`hidden md:flex px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors items-center gap-1 ${
-              isLight 
-                ? 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-300' 
-                : 'bg-slate-800 hover:bg-slate-750 text-white border-slate-700'
-            }`}
-          >
-            <Plus className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Post Task</span>
-          </button>
-        </div>
+        <button
+          onClick={handleSyncSources}
+          disabled={store.isSyncingIngestion}
+          className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${store.isSyncingIngestion ? 'animate-spin' : ''}`} />
+          <span>{store.isSyncingIngestion ? 'Ingesting Feeds...' : 'Sync Live Sources'}</span>
+        </button>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className={`rounded-xl px-3.5 py-2.5 border flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 transition-colors ${
-        isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900 border-slate-800'
+      {syncFeedback && (
+        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 text-xs font-bold flex items-center gap-2 animate-fade-in">
+          <CheckCircle2 className="w-4 h-4" />
+          <span>{syncFeedback}</span>
+        </div>
+      )}
+
+      {/* Search and Category Pill Bar */}
+      <div className={`p-3 rounded-2xl border space-y-2.5 ${
+        isLight ? 'bg-white border-slate-200 shadow-xs' : 'bg-slate-900 border-slate-800'
       }`}>
+        {/* Search row with filter toggle */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search by role, company, skill (e.g. Python, Sheng, Data)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`w-full pl-9 pr-4 py-2 rounded-xl text-xs border transition-colors ${
+                isLight ? 'bg-slate-50 border-slate-300 text-slate-900' : 'bg-slate-950 border-slate-700 text-slate-100'
+              }`}
+            />
+          </div>
+
+          <button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className={`px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-colors cursor-pointer ${
+              showAdvancedFilters || locationFilter !== 'ALL' || remoteTypeFilter !== 'ALL' || employmentFilter !== 'ALL' || expFilter !== 'ALL'
+                ? 'bg-emerald-600 text-white border-emerald-600'
+                : isLight ? 'bg-slate-50 hover:bg-slate-100 border-slate-300 text-slate-700' : 'bg-slate-950 hover:bg-slate-800 border-slate-700 text-slate-300'
+            }`}
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>Filters</span>
+          </button>
+        </div>
+
         {/* Category Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none text-xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
           {categories.map((cat) => (
             <button
               key={cat.value}
               onClick={() => setSelectedCategory(cat.value)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors cursor-pointer flex items-center gap-1.5 ${
                 selectedCategory === cat.value
-                  ? 'bg-emerald-600 text-white font-bold shadow-sm'
-                  : isLight ? 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200 border border-slate-200' : 'bg-slate-950 text-slate-400 hover:text-slate-200 hover:bg-slate-850 border border-slate-800'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : isLight ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' : 'bg-slate-800 hover:bg-slate-750 text-slate-300'
               }`}
             >
               <span>{cat.label}</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${selectedCategory === cat.value ? 'bg-white/20 text-white' : isLight ? 'bg-slate-200 text-slate-700' : 'bg-slate-800 text-slate-400'}`}>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                selectedCategory === cat.value ? 'bg-white/20 text-white' : 'bg-black/10 dark:bg-white/10'
+              }`}>
                 {cat.count}
               </span>
             </button>
           ))}
         </div>
 
-        {/* Search & Hardware Toggle */}
-        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-          <div className="relative flex-1 sm:w-52">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search Fuzu, skills, tasks..."
-              className={`w-full pl-8 pr-3 py-1 border rounded-lg text-xs focus:outline-none focus:border-emerald-500 transition-colors ${
-                isLight ? 'bg-slate-50 border-slate-200 text-slate-900' : 'bg-slate-950 border-slate-800 text-white'
-              }`}
-            />
-          </div>
-
-          <div className={`flex items-center gap-0.5 p-0.5 rounded-lg border ${
-            isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-950 border-slate-800'
+        {/* Advanced Filters Expandable Drawer */}
+        {showAdvancedFilters && (
+          <div className={`p-3 rounded-xl border grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs pt-2.5 animate-fade-in ${
+            isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
           }`}>
-            <button
-              onClick={() => setDeviceFilter('ALL')}
-              className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${
-                deviceFilter === 'ALL' 
-                  ? isLight ? 'bg-white text-slate-900 font-bold shadow-xs' : 'bg-slate-800 text-white font-bold' 
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setDeviceFilter('SMARTPHONE_OK')}
-              className={`px-2 py-1 rounded text-[11px] font-medium flex items-center gap-1 transition-colors ${
-                deviceFilter === 'SMARTPHONE_OK' 
-                  ? 'bg-emerald-600 text-white font-bold' 
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Smartphone className="w-3 h-3" />
-              <span>Phone</span>
-            </button>
-            <button
-              onClick={() => setDeviceFilter('LAPTOP_REQUIRED')}
-              className={`px-2 py-1 rounded text-[11px] font-medium flex items-center gap-1 transition-colors ${
-                deviceFilter === 'LAPTOP_REQUIRED' 
-                  ? 'bg-emerald-600 text-white font-bold' 
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Laptop className="w-3 h-3" />
-              <span>PC</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Gigs List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {filteredGigs.map((gig) => {
-          const isApplied = appliedGigs.has(gig.id);
-          const launchTimeInfo = formatLaunchTime(gig.createdAt);
-          const platformLabel = gig.platformName || (gig.originType === 'INTERNAL_ESCROW' ? 'Campus Escrow' : 'Direct Partner');
-
-          return (
-            <div
-              key={gig.id}
-              onClick={() => handleOpenGig(gig)}
-              className={`rounded-xl p-4 border flex flex-col justify-between transition-all cursor-pointer relative ${
-                gig.isFeatured
-                  ? isLight 
-                    ? 'bg-white border-amber-300 ring-1 ring-amber-400/30 shadow-md' 
-                    : 'bg-slate-900 border-amber-600/60 ring-1 ring-amber-500/30 shadow-md'
-                  : isLight ? 'bg-white border-slate-200 shadow-sm hover:border-slate-300' : 'bg-slate-900 border-slate-800 hover:border-slate-700'
-              }`}
-            >
-              <div className="space-y-2.5">
-                {/* Top Row: Featured Badge + Platform Source + Launch Timestamp */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {gig.isFeatured && (
-                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-amber-600 text-white flex items-center gap-1 shadow-xs">
-                        <Zap className="w-2.5 h-2.5 fill-white" />
-                        <span>Featured</span>
-                      </span>
-                    )}
-
-                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
-                      gig.originType === 'INTERNAL_ESCROW'
-                        ? isLight ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-emerald-950/50 text-emerald-400 border-emerald-800'
-                        : isLight ? 'bg-slate-100 text-slate-800 border-slate-300 font-bold' : 'bg-slate-800 text-white border-slate-700 font-bold'
-                    }`}>
-                      {platformLabel}
-                    </span>
-
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
-                      isLight ? 'bg-slate-100 text-slate-600' : 'bg-slate-950 text-slate-400'
-                    }`}>
-                      {gig.category}
-                    </span>
-                  </div>
-
-                  {/* Launch Timestamp */}
-                  <div className={`flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-md border flex-shrink-0 ${
-                    launchTimeInfo.relative === 'Just now'
-                      ? 'bg-emerald-600 text-white border-emerald-500 font-bold animate-pulse'
-                      : isLight ? 'bg-slate-50 text-slate-600 border-slate-200' : 'bg-slate-950 text-slate-400 border-slate-800'
-                  }`} title={`Launched: ${launchTimeInfo.exact}`}>
-                    <Clock className="w-3 h-3 text-emerald-500" />
-                    <span>{launchTimeInfo.relative}</span>
-                  </div>
-                </div>
-
-                {/* Gig Title */}
-                <h3 className="text-sm font-bold leading-snug line-clamp-2">
-                  {gig.title}
-                </h3>
-
-                {/* Poster / Employer */}
-                <div className={`flex items-center gap-1.5 text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                  <span>{gig.posterName || 'Verified Poster'}</span>
-                  {gig.campus && gig.campus !== 'ALL' && (
-                    <>
-                      <span>•</span>
-                      <span className="font-semibold text-emerald-600">{gig.campus} Campus</span>
-                    </>
-                  )}
-                </div>
-
-                {/* Description */}
-                <p className={`text-xs line-clamp-2 leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
-                  {gig.description}
-                </p>
-
-                {/* Skills Badges */}
-                <div className="flex flex-wrap gap-1 pt-1">
-                  {gig.skills.slice(0, 3).map((s) => (
-                    <span
-                      key={s}
-                      className={`text-[10px] px-2 py-0.5 rounded font-mono ${
-                        isLight ? 'bg-slate-100 text-slate-700' : 'bg-slate-950 text-slate-400 border border-slate-800'
-                      }`}
-                    >
-                      {s}
-                    </span>
-                  ))}
-                  {gig.deviceRequirement === 'SMARTPHONE_OK' && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-1 font-semibold">
-                      <Smartphone className="w-2.5 h-2.5" />
-                      <span>Phone OK</span>
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Bottom Row: Bounty in USD + Action Button */}
-              <div className={`mt-4 pt-3 border-t flex items-center justify-between gap-2 ${
-                isLight ? 'border-slate-200' : 'border-slate-800'
-              }`}>
-                <div>
-                  <span className={`text-[10px] uppercase font-bold block ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Compensation (USD)
-                  </span>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-base sm:text-lg font-extrabold text-emerald-600">
-                      ${(gig.rewardUsd || Math.round((gig.rewardKes || 2600) / 130)).toLocaleString()}
-                    </span>
-                    <span className={`text-[11px] font-mono ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                      (~KSh {(gig.rewardKes || gig.rewardUsd * 130).toLocaleString()})
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {gig.externalApplyUrl ? (
-                    <button
-                      onClick={(e) => handleDirectExternalOpen(e, gig)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-                    >
-                      <span>Apply</span>
-                      {hasPass ? <ExternalLink className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={(e) => handleTakeBounty(e, gig)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                        isApplied
-                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                          : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm active:scale-95'
-                      }`}
-                    >
-                      {isApplied ? (
-                        <>
-                          <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Contact Open</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>Take Bounty</span>
-                          {hasPass ? <ArrowRight className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Exact Launch Date Footer */}
-              <div className={`mt-2 pt-1.5 text-[9px] font-mono flex items-center justify-between border-t ${
-                isLight ? 'border-slate-100 text-slate-400' : 'border-slate-900 text-slate-500'
-              }`}>
-                <span>Launched: {launchTimeInfo.exact}</span>
-                <span>{gig.applicantCount} applicants</span>
-              </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">Geographic Region</label>
+              <select
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value as any)}
+                className={`w-full p-1.5 rounded-lg border text-xs ${
+                  isLight ? 'bg-white border-slate-300' : 'bg-slate-900 border-slate-700'
+                }`}
+              >
+                <option value="ALL">All Regions (Worldwide & Kenya)</option>
+                <option value="KENYA">🇰🇪 Kenya Eligible</option>
+                <option value="GLOBAL">🌍 Global Remote</option>
+              </select>
             </div>
-          );
-        })}
+
+            <div>
+              <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">Work Arrangement</label>
+              <select
+                value={remoteTypeFilter}
+                onChange={(e) => setRemoteTypeFilter(e.target.value as any)}
+                className={`w-full p-1.5 rounded-lg border text-xs ${
+                  isLight ? 'bg-white border-slate-300' : 'bg-slate-900 border-slate-700'
+                }`}
+              >
+                <option value="ALL">All Arrangements</option>
+                <option value="REMOTE">Fully Remote</option>
+                <option value="HYBRID">Hybrid</option>
+                <option value="ON_SITE">On-Site</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">Employment Type</label>
+              <select
+                value={employmentFilter}
+                onChange={(e) => setEmploymentFilter(e.target.value as any)}
+                className={`w-full p-1.5 rounded-lg border text-xs ${
+                  isLight ? 'bg-white border-slate-300' : 'bg-slate-900 border-slate-700'
+                }`}
+              >
+                <option value="ALL">All Job Types</option>
+                <option value="MICROTASK">AI Microtask & Annotation</option>
+                <option value="FREELANCE">Freelance Project</option>
+                <option value="INTERNSHIP">Internship / Attachment</option>
+                <option value="PART_TIME">Part-Time Student Role</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">Experience Level</label>
+              <select
+                value={expFilter}
+                onChange={(e) => setExpFilter(e.target.value as any)}
+                className={`w-full p-1.5 rounded-lg border text-xs ${
+                  isLight ? 'bg-white border-slate-300' : 'bg-slate-900 border-slate-700'
+                }`}
+              >
+                <option value="ALL">All Experience Levels</option>
+                <option value="BEGINNER">Beginner / Student Friendly</option>
+                <option value="INTERMEDIATE">Intermediate</option>
+                <option value="ADVANCED">Advanced</option>
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Interactive Job Listing Modal */}
+      {/* Results Count & Match Status */}
+      <div className="flex items-center justify-between text-xs text-slate-500 px-1 font-medium">
+        <span>Showing {filteredGigs.length} aggregated opportunities</span>
+        <span className="text-[11px] text-emerald-600 font-bold">
+          {store.user.profile?.skills?.length || 0} skills active in your matching profile
+        </span>
+      </div>
+
+      {/* Gigs Feed Grid */}
+      {filteredGigs.length === 0 ? (
+        <div className={`p-10 rounded-2xl border text-center space-y-2 ${
+          isLight ? 'bg-white border-slate-200 text-slate-500' : 'bg-slate-900 border-slate-800 text-slate-400'
+        }`}>
+          <Briefcase className="w-8 h-8 mx-auto text-slate-400 opacity-60" />
+          <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">No opportunities match the current criteria</h3>
+          <p className="text-xs max-w-sm mx-auto">
+            Try resetting filters or search terms, or click "Sync Live Sources" to ingest new postings.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {filteredGigs.map((gig) => {
+            const isSaved = store.isGigSaved(gig.id);
+            const matchScore = matchStudentProfile(store.user.profile, gig);
+            const scamSignals = gig.scamRiskSignals || [];
+
+            return (
+              <div
+                key={gig.id}
+                onClick={() => setActiveGigModal(gig)}
+                className={`p-4 rounded-2xl border flex flex-col justify-between space-y-3 transition-all cursor-pointer ${
+                  isLight 
+                    ? 'bg-white border-slate-200 shadow-xs hover:border-emerald-500 hover:shadow-md' 
+                    : 'bg-slate-900 border-slate-800 hover:border-emerald-600/70 hover:shadow-lg hover:shadow-emerald-950/20'
+                }`}
+              >
+                {/* Header: Badges and Source */}
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {gig.verificationStatus === 'VERIFIED_BY_CAMPUSHUSTLE' ? (
+                        <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3" />
+                          <span>Verified Portal</span>
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700">
+                          Found on CampusHustle
+                        </span>
+                      )}
+
+                      <span className="px-2 py-0.5 rounded-lg text-[10px] font-mono bg-purple-500/10 text-purple-600 font-bold border border-purple-500/20">
+                        {matchScore.matchPercentage}% Match
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => store.toggleSaveGig(gig.id)}
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                          isSaved ? 'text-amber-500' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                        }`}
+                        title={isSaved ? 'Remove bookmark' : 'Bookmark job'}
+                      >
+                        {isSaved ? <BookmarkCheck className="w-4 h-4 fill-amber-500" /> : <Bookmark className="w-4 h-4" />}
+                      </button>
+
+                      <button
+                        onClick={() => setReportingGig(gig)}
+                        className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
+                        title="Report listing"
+                      >
+                        <Flag className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Title and Company */}
+                  <div>
+                    <h3 className="font-extrabold text-sm sm:text-base leading-snug line-clamp-2">
+                      {gig.title}
+                    </h3>
+                    <div className="flex items-center gap-2 text-xs text-slate-500 mt-1 font-medium">
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">{gig.companyName || gig.platformName}</span>
+                      <span>•</span>
+                      <span>{gig.location || 'Remote'}</span>
+                      <span>•</span>
+                      <span className="text-[10px]">{formatLaunchTime(gig.publishedAt || gig.createdAt)}</span>
+                    </div>
+                  </div>
+
+                  {/* Scam Risk Alert if flagged */}
+                  {scamSignals.length > 0 && (
+                    <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 text-[11px] flex items-center gap-1.5">
+                      <ShieldAlert className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span className="truncate">Risk Warning: {scamSignals[0]}</span>
+                    </div>
+                  )}
+
+                  {/* Brief description */}
+                  <p className={`text-xs line-clamp-2 leading-relaxed ${
+                    isLight ? 'text-slate-600' : 'text-slate-300'
+                  }`}>
+                    {gig.description}
+                  </p>
+
+                  {/* Skills badges */}
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {gig.skills.slice(0, 4).map((s) => (
+                      <span
+                        key={s}
+                        className={`text-[10px] px-2 py-0.5 rounded-lg font-mono ${
+                          store.user.profile?.skills?.includes(s)
+                            ? 'bg-emerald-500/10 text-emerald-600 font-bold border border-emerald-500/30'
+                            : isLight ? 'bg-slate-100 text-slate-700' : 'bg-slate-800 text-slate-300'
+                        }`}
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Footer: Compensation & Apply Button */}
+                <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <div>
+                    <div className="text-base font-extrabold text-emerald-600 font-mono">
+                      ${gig.rewardUsd} USD
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-mono">
+                      ~KSh {(gig.rewardKes || gig.rewardUsd * 130).toLocaleString()}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={(e) => handleApplyClick(e, gig)}
+                    className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                  >
+                    <span>Apply via Official Portal</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Task Details Modal (Rich 4-Bullet Summaries & In-Depth Verification) */}
       {activeGigModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-150">
-          <div className={`relative w-full max-w-lg rounded-2xl border shadow-2xl overflow-hidden transition-colors ${
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className={`w-full max-w-xl rounded-2xl border shadow-2xl overflow-hidden flex flex-col max-h-[85vh] transition-all ${
             isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-slate-100'
           }`}>
-            {/* Header */}
-            <div className="p-4 sm:p-5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white">
-                  <Briefcase className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-bold text-white line-clamp-1">
-                    {activeGigModal.title}
-                  </h3>
-                  <p className="text-[11px] text-emerald-100">
-                    Source: {activeGigModal.platformName || 'Campus Hustle Verified'}
-                  </p>
-                </div>
+            <div className={`px-5 py-4 border-b flex items-center justify-between ${
+              isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
+            }`}>
+              <div className="space-y-0.5">
+                <span className="text-[10px] uppercase font-bold text-emerald-600 tracking-wider block">
+                  {activeGigModal.category}
+                </span>
+                <h3 className="text-base font-extrabold truncate max-w-md">{activeGigModal.title}</h3>
               </div>
               <button
                 onClick={() => setActiveGigModal(null)}
-                className="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-5 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-              {/* Reward in USD and Platform Card */}
+            <div className="p-5 overflow-y-auto space-y-4 text-xs">
+              {/* Compensation Header */}
               <div className={`p-4 rounded-xl border flex items-center justify-between ${
                 isLight ? 'bg-emerald-50/50 border-emerald-200' : 'bg-slate-950 border-slate-800'
               }`}>
                 <div>
-                  <span className={`text-[10px] uppercase font-bold tracking-wider ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                    Offering Compensation (USD)
-                  </span>
-                  <div className="flex items-baseline gap-2">
-                    <div className="text-xl sm:text-2xl font-black text-emerald-600">
-                      ${(activeGigModal.rewardUsd || Math.round((activeGigModal.rewardKes || 2600) / 130)).toLocaleString()} USD
-                    </div>
-                    <span className={`text-xs font-mono font-semibold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                      (~KSh {(activeGigModal.rewardKes || activeGigModal.rewardUsd * 130).toLocaleString()})
-                    </span>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Offering Compensation</span>
+                  <div className="text-xl font-extrabold text-emerald-600 font-mono">
+                    ${activeGigModal.rewardUsd} USD <span className="text-xs text-slate-500 font-normal">(~KSh {(activeGigModal.rewardKes || activeGigModal.rewardUsd * 130).toLocaleString()})</span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded border font-bold ${
-                    isLight ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-900 border-slate-700 text-white'
-                  }`}>
-                    {activeGigModal.originType}
-                  </span>
-                  <span className={`text-[10px] block mt-1 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                    {activeGigModal.applicantCount} active applicants
-                  </span>
-                </div>
+
+                <span className="px-2.5 py-1 rounded-xl bg-emerald-600/10 text-emerald-600 font-bold border border-emerald-600/20">
+                  {activeGigModal.platformName || 'Direct Portal'}
+                </span>
               </div>
 
+              {/* 4-Point AI Summary */}
+              {activeGigModal.summaryBullets && activeGigModal.summaryBullets.length > 0 && (
+                <div className={`p-3.5 rounded-xl border space-y-2 ${
+                  isLight ? 'bg-purple-50/50 border-purple-200 text-purple-950' : 'bg-purple-950/20 border-purple-800 text-purple-200'
+                }`}>
+                  <div className="flex items-center gap-1.5 font-bold text-xs text-purple-600 dark:text-purple-400">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>AI Executive 4-Point Brief</span>
+                  </div>
+                  <ul className="space-y-1 pl-2 text-[11px] list-disc list-inside">
+                    {activeGigModal.summaryBullets.map((b, idx) => (
+                      <li key={idx} className="leading-relaxed">{b}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {/* Description */}
-              <div className="space-y-1.5">
-                <h4 className={`text-xs font-bold uppercase tracking-wider ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
-                  Task Details & Requirements
-                </h4>
-                <p className={`text-xs sm:text-sm leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block">
+                  Full Opportunity Description
+                </span>
+                <p className={`text-xs leading-relaxed ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
                   {activeGigModal.description}
                 </p>
               </div>
 
-              {/* Qualification Guide if present */}
+              {/* Qualification Guidelines */}
               {activeGigModal.qualificationGuide && (
                 <div className={`p-3 rounded-xl border space-y-1 ${
                   isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
                 }`}>
-                  <span className="text-[10px] uppercase font-bold text-emerald-600 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" />
-                    <span>Screening & Benchmark Rubric</span>
+                  <span className="text-[10px] uppercase font-bold text-emerald-600 block">
+                    Screening & Benchmark Guidelines
                   </span>
-                  <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
-                    {activeGigModal.qualificationGuide}
-                  </p>
+                  <p className="text-xs">{activeGigModal.qualificationGuide}</p>
                 </div>
               )}
 
-              {/* Required Skills */}
+              {/* Skills */}
               <div className="space-y-1.5">
-                <span className={`text-xs font-bold uppercase tracking-wider block ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
-                  Required Skills
+                <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block">
+                  Required Competencies
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {activeGigModal.skills.map((s) => (
-                    <span
-                      key={s}
-                      className={`text-xs px-2.5 py-1 rounded-lg font-mono ${
-                        isLight ? 'bg-slate-100 text-slate-800 border border-slate-200' : 'bg-slate-800 text-slate-200 border border-slate-700'
-                      }`}
-                    >
+                    <span key={s} className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 font-mono text-xs font-semibold">
                       {s}
                     </span>
                   ))}
                 </div>
               </div>
+            </div>
 
-              {/* Action Contact / Application Section */}
-              {!hasPass ? (
-                <div className={`p-4 rounded-xl border text-center space-y-3 ${
-                  isLight ? 'bg-amber-50/60 border-amber-200' : 'bg-amber-950/20 border-amber-800/60'
-                }`}>
-                  <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
-                    <Lock className="w-4 h-4" />
-                    <span>Poster Contacts & Direct Application Locked</span>
-                  </div>
-                  <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
-                    Unlock verified WhatsApp contacts, phone numbers, and external screening rubrics for a one-time fee of <strong>$1 (KSh 130)</strong>.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setActiveGigModal(null);
-                      onOpenPaywall(`Unlock Contact & Application for "${activeGigModal.title}"`);
-                    }}
-                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
-                  >
-                    Pay KSh 130 via M-Pesa to Unlock
-                  </button>
-                </div>
-              ) : activeGigModal.externalApplyUrl ? (
-                <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
-                  <div className={`p-2.5 rounded-xl border text-xs flex items-center justify-between gap-2 ${
-                    isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
-                  }`}>
-                    <span className="font-mono text-[11px] truncate text-emerald-600">
-                      {activeGigModal.externalApplyUrl}
-                    </span>
-                    <Globe className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  </div>
+            {/* Modal Footer */}
+            <div className={`px-5 py-3.5 border-t flex items-center justify-between ${
+              isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
+            }`}>
+              <button
+                onClick={() => {
+                  store.toggleSaveGig(activeGigModal.id);
+                }}
+                className={`px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 cursor-pointer ${
+                  store.isGigSaved(activeGigModal.id) ? 'text-amber-500 border-amber-500/30 bg-amber-500/10' : 'border-slate-300'
+                }`}
+              >
+                <Bookmark className="w-3.5 h-3.5" />
+                <span>{store.isGigSaved(activeGigModal.id) ? 'Saved' : 'Save'}</span>
+              </button>
 
-                  <a
-                    href={activeGigModal.externalApplyUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => store.applyToGig(activeGigModal.id)}
-                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
-                  >
-                    <span>Open Application Portal ({activeGigModal.platformName || 'Job Portal'})</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </div>
-              ) : (
-                <div className="space-y-2.5 pt-2 border-t border-slate-200 dark:border-slate-800">
-                  <div className="flex items-center justify-between text-xs font-semibold">
-                    <span>Direct Poster Contact:</span>
-                    <span className="text-emerald-600 font-mono font-bold">
-                      +{activeGigModal.posterPhone || '254712000001'}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <a
-                      href={`https://wa.me/${activeGigModal.posterPhone || '254712000001'}?text=Hi%20I%20am%20applying%20for%20your%20CampusHustle%20task:%20${encodeURIComponent(activeGigModal.title)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => store.applyToGig(activeGigModal.id)}
-                      className="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-center cursor-pointer"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span>Chat on WhatsApp</span>
-                    </a>
-
-                    <a
-                      href={`tel:+${activeGigModal.posterPhone || '254712000001'}`}
-                      onClick={() => store.applyToGig(activeGigModal.id)}
-                      className={`py-2.5 border text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-center cursor-pointer ${
-                        isLight ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-800' : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-white'
-                      }`}
-                    >
-                      <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Direct Phone Call</span>
-                    </a>
-                  </div>
-                </div>
-              )}
+              <button
+                onClick={() => {
+                  const target = activeGigModal;
+                  setActiveGigModal(null);
+                  if (target.externalApplyUrl) {
+                    setRedirectModalGig(target);
+                  }
+                }}
+                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+              >
+                <span>Proceed to Apply Portal</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Global Modals */}
+      <ExternalRedirectModal
+        isOpen={Boolean(redirectModalGig)}
+        gig={redirectModalGig}
+        onClose={() => setRedirectModalGig(null)}
+      />
+
+      <JobReportModal
+        isOpen={Boolean(reportingGig)}
+        gig={reportingGig}
+        onClose={() => setReportingGig(null)}
+      />
     </div>
   );
 };

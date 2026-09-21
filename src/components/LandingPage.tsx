@@ -352,7 +352,7 @@ export const LandingPage: React.FC = () => {
                       </span>
                       <span className="flex items-center gap-1 text-emerald-600 font-bold">
                         <Clock className="w-3 h-3" />
-                        <span>Launched {launchInfo.relative}</span>
+                        <span>Launched {launchInfo}</span>
                       </span>
                     </div>
 

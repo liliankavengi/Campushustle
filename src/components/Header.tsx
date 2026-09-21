@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useCampusStore } from '../lib/store';
 import { CampusName, NetworkCondition } from '../types';
+import { AppTabType } from './Sidebar';
 import { 
   Zap, 
   ShieldCheck, 
@@ -15,13 +16,14 @@ import {
   Flame, 
   TrendingUp, 
   History, 
-  BarChart3, 
-  SlidersHorizontal,
-  Sun,
-  Moon,
-  LogOut,
-  X,
-  BookOpen
+  CheckSquare, 
+  Bookmark, 
+  BrainCircuit, 
+  Sun, 
+  Moon, 
+  LogOut, 
+  X, 
+  BookOpen 
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -29,8 +31,8 @@ interface HeaderProps {
   onOpenEscrowModal: () => void;
   onOpenArchitecture: () => void;
   onToggleSidebar?: () => void;
-  activeTab: 'GIGS' | 'RUNWAY' | 'MMF' | 'LEDGER' | 'GUIDES' | 'ADMIN';
-  setActiveTab: (tab: 'GIGS' | 'RUNWAY' | 'MMF' | 'LEDGER' | 'GUIDES' | 'ADMIN') => void;
+  activeTab: AppTabType;
+  setActiveTab: (tab: AppTabType) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -65,12 +67,13 @@ export const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const navItems = [
-    { id: 'GIGS', label: 'Opportunities Board', icon: <Briefcase className="w-4 h-4 text-emerald-600" />, badge: `${store.gigs.length} Live` },
-    { id: 'RUNWAY', label: 'HELB & Daily Runway', icon: <Flame className="w-4 h-4 text-emerald-600" />, badge: 'Burn Engine' },
-    { id: 'MMF', label: 'MMF Yield Trackers', icon: <TrendingUp className="w-4 h-4 text-emerald-600" />, badge: '16.85% EAR' },
-    { id: 'GUIDES', label: 'AI Guides & Hustles', icon: <BookOpen className="w-4 h-4 text-emerald-600" />, badge: 'Playbooks' },
-    { id: 'LEDGER', label: 'M-Pesa Ledger', icon: <History className="w-4 h-4 text-slate-500" />, badge: `${store.transactions.length} Txs` },
+  const navItems: { id: AppTabType; label: string; icon: any; badge: string }[] = [
+    { id: 'GIGS', label: 'Aggregator', icon: <Briefcase className="w-3.5 h-3.5" />, badge: `${store.gigs.length}` },
+    { id: 'TRACKER', label: 'Tracker', icon: <CheckSquare className="w-3.5 h-3.5" />, badge: `${store.applications.length}` },
+    { id: 'SAVED', label: 'Saved', icon: <Bookmark className="w-3.5 h-3.5" />, badge: `${store.savedGigs.length}` },
+    { id: 'SKILLS', label: 'AI Skills', icon: <BrainCircuit className="w-3.5 h-3.5" />, badge: 'AI' },
+    { id: 'RUNWAY', label: 'HELB Runway', icon: <Flame className="w-3.5 h-3.5" />, badge: 'Burn' },
+    { id: 'MMF', label: 'MMF Yields', icon: <TrendingUp className="w-3.5 h-3.5" />, badge: '16.8%' },
   ];
 
   return (
@@ -83,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({
           {onToggleSidebar && (
             <button
               onClick={onToggleSidebar}
-              className={`p-1.5 rounded-xl border lg:hidden transition-colors ${
+              className={`p-1.5 rounded-xl border lg:hidden transition-colors cursor-pointer ${
                 isLight 
                   ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700' 
                   : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300'
@@ -98,97 +101,72 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
               <Zap className="w-4 h-4 fill-white text-white" />
             </div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-base font-extrabold tracking-tight">
+            <div className="flex flex-col">
+              <span className="text-sm sm:text-base font-extrabold tracking-tight leading-none">
                 Campus<span className="text-emerald-600">Hustle</span>
               </span>
-              <span className={`text-[10px] font-medium hidden md:inline ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                Kenya
+              <span className="text-[10px] text-emerald-600 font-bold hidden sm:inline">
+                Gig Discovery 2.0
               </span>
             </div>
           </Link>
         </div>
 
-        {/* Center: Signal Mode Selector (Desktop) */}
-        <div className={`hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] ${
-          isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-900 border-slate-800'
-        }`}>
-          <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-          <span className={isLight ? 'text-slate-500' : 'text-slate-400'}>Signal:</span>
-          <select
-            value={store.network}
-            onChange={(e) => store.setNetwork(e.target.value as NetworkCondition)}
-            className="bg-transparent font-semibold text-emerald-600 focus:outline-none cursor-pointer text-[11px]"
-          >
-            {networkOptions.map((opt) => (
-              <option key={opt.key} value={opt.key} className={isLight ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Center-Right: Quick Module Selector (Desktop) */}
-        <div className="hidden md:flex items-center gap-1">
+        {/* Center: Quick Tab Switcher (Desktop) */}
+        <div className="hidden xl:flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold">
           {navItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id as any)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+              onClick={() => setActiveTab(item.id)}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === item.id
-                  ? 'bg-emerald-600 text-white font-bold shadow-sm'
-                  : isLight ? 'text-slate-600 hover:bg-slate-100' : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-600 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               {item.icon}
               <span>{item.label}</span>
+              <span className="text-[10px] px-1 rounded-sm bg-black/5 dark:bg-white/10 opacity-70">
+                {item.badge}
+              </span>
             </button>
           ))}
         </div>
 
-        {/* Right: Actions and User Profile Dropdown */}
-        <div className="flex items-center gap-2">
-          {/* Post Task Button */}
+        {/* Right: Controls & User Profile */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Theme Toggle */}
           <button
-            onClick={onOpenEscrowModal}
-            className="hidden sm:flex px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Escrow Post</span>
-          </button>
-
-          {/* Theme Toggle Button */}
-          <button
-            onClick={() => store.setTheme(isLight ? 'dark' : 'light')}
+            onClick={() => store.toggleTheme()}
             className={`p-2 rounded-xl border transition-colors cursor-pointer ${
               isLight 
                 ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700' 
-                : 'bg-slate-900 hover:bg-slate-850 border-slate-800 text-slate-300'
+                : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300'
             }`}
             title={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
           >
-            {isLight ? <Moon className="w-4 h-4 text-slate-700" /> : <Sun className="w-4 h-4 text-amber-400" />}
+            {isLight ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
           </button>
 
-          {/* User Account / Profile Badge */}
+          {/* User Account / Profile Chip */}
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className={`flex items-center gap-2 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 py-1 px-2.5 rounded-xl border transition-colors cursor-pointer ${
                 isLight 
-                  ? 'bg-slate-100 hover:bg-slate-200 border-slate-300' 
-                  : 'bg-slate-900 hover:bg-slate-850 border-slate-800'
+                  ? 'bg-slate-50 hover:bg-slate-100 border-slate-300 text-slate-800' 
+                  : 'bg-slate-900 hover:bg-slate-850 border-slate-800 text-slate-200'
               }`}
             >
-              <div className="w-6 h-6 rounded-lg bg-emerald-600/20 text-emerald-600 flex items-center justify-center font-bold text-xs">
-                {store.user.fullName.charAt(0)}
+              <div className="w-6 h-6 rounded-full bg-emerald-600 text-white font-extrabold flex items-center justify-center text-[10px]">
+                {store.user.fullName ? store.user.fullName[0].toUpperCase() : 'S'}
               </div>
-              <div className="hidden sm:flex flex-col text-left leading-tight">
-                <span className="text-xs font-bold truncate max-w-[90px]">
-                  {store.user.fullName.split(' ')[0]}
+              <div className="hidden sm:flex flex-col text-left">
+                <span className="text-xs font-bold leading-none truncate max-w-[90px]">
+                  {store.user.fullName || 'Student'}
                 </span>
-                <span className="text-[10px] text-emerald-600 font-mono">
-                  {store.user.campus}
+                <span className="text-[9px] text-emerald-600 font-semibold leading-tight">
+                  {store.user.campus || 'MMU'}
                 </span>
               </div>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
@@ -196,95 +174,56 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Dropdown Menu */}
             {dropdownOpen && (
-              <div className={`absolute right-0 mt-2 w-64 rounded-2xl border shadow-xl p-2 z-50 animate-in fade-in duration-100 ${
+              <div className={`absolute right-0 mt-2 w-56 rounded-2xl border shadow-xl p-2 space-y-2 z-50 animate-fade-in ${
                 isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-slate-100'
               }`}>
-                <div className="p-3 border-b border-slate-200 dark:border-slate-800">
-                  <div className="font-bold text-xs truncate">{store.user.fullName}</div>
-                  <div className={`text-[11px] font-mono mt-0.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                    +{store.user.phoneNumber}
-                  </div>
-                  <div className="mt-2 flex items-center gap-1.5">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                      hasPass 
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800'
-                        : isLight ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-amber-950/40 text-amber-400 border-amber-800'
-                    }`}>
-                      {hasPass ? '✓ Unlimited Pass Active' : '🔒 Unpaid ($1 Pass)'}
-                    </span>
+                <div className="p-2 border-b border-slate-100 dark:border-slate-800">
+                  <div className="font-extrabold text-xs">{store.user.fullName || 'Student Account'}</div>
+                  <div className="text-[11px] text-slate-400">{store.user.phoneNumber || 'No phone set'}</div>
+                  <div className="text-[10px] text-emerald-600 font-bold mt-1">
+                    {store.user.subscribedService || 'Campus Pass Holder'}
                   </div>
                 </div>
 
-                <div className="p-1.5 space-y-1">
-                  {!hasPass && (
-                    <button
-                      onClick={() => {
-                        setDropdownOpen(false);
-                        onOpenPaywall();
-                      }}
-                      className="w-full py-2 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer"
-                    >
-                      <Lock className="w-3.5 h-3.5" />
-                      <span>Unlock All Features ($1)</span>
-                    </button>
-                  )}
+                <div className="space-y-1">
+                  <button
+                    onClick={() => {
+                      setActiveTab('SKILLS');
+                      setDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer"
+                  >
+                    <BrainCircuit className="w-3.5 h-3.5 text-purple-600" />
+                    <span>Skill Matrix & AI Profile</span>
+                  </button>
 
-                  <div className="pt-1">
-                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 block ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>
-                      Change University
-                    </span>
-                    <div className="grid grid-cols-3 gap-1 mt-1">
-                      {campuses.map((c) => (
-                        <button
-                          key={c}
-                          onClick={() => {
-                            store.setCampus(c);
-                          }}
-                          className={`py-1 px-1.5 rounded-lg text-[10px] font-mono font-bold transition-colors cursor-pointer ${
-                            store.user.campus === c
-                              ? 'bg-emerald-600 text-white'
-                              : isLight ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' : 'bg-slate-800 hover:bg-slate-750 text-slate-300'
-                          }`}
-                        >
-                          {c}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <button
+                    onClick={() => {
+                      setActiveTab('TRACKER');
+                      setDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer"
+                  >
+                    <CheckSquare className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Application Tracker</span>
+                  </button>
+                </div>
 
-                  {/* Dropdown Logout button */}
-                  <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-                    <button
-                      onClick={() => {
-                        setDropdownOpen(false);
-                        store.logout();
-                      }}
-                      className={`w-full py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border transition-colors cursor-pointer ${
-                        isLight ? 'bg-red-50 hover:bg-red-100 border-red-200 text-red-700' : 'bg-red-950/30 hover:bg-red-950/50 border-red-900/60 text-red-400'
-                      }`}
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      <span>Log Out of Account</span>
-                    </button>
-                  </div>
+                <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    onClick={() => {
+                      store.logout();
+                      setDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-500 hover:bg-rose-500/10 flex items-center gap-2 cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign Out</span>
+                  </button>
                 </div>
               </div>
             )}
           </div>
-
-          {/* Dedicated Navbar Log Out Button on the Right */}
-          <button
-            onClick={() => store.logout()}
-            className={`p-2 sm:px-2.5 sm:py-1.5 rounded-xl border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
-              isLight 
-                ? 'bg-slate-100 hover:bg-red-50 hover:border-red-300 text-slate-700 hover:text-red-700 border-slate-300' 
-                : 'bg-slate-900 hover:bg-red-950/40 hover:border-red-800 text-slate-300 hover:text-red-400 border-slate-800'
-            }`}
-            title="Log Out of CampusHustle"
-          >
-            <LogOut className="w-4 h-4 text-red-500" />
-            <span className="hidden md:inline">Log Out</span>
-          </button>
         </div>
       </div>
     </header>
