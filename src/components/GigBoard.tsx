@@ -57,9 +57,11 @@ export const GigBoard: React.FC<GigBoardProps> = ({
 
   const categories: { label: string; value: string; count: number }[] = [
     { label: 'All Opportunities', value: 'ALL', count: store.gigs.length },
+    { label: 'Global Remote (Worldwide)', value: 'Global Remote', count: store.gigs.filter(g => g.category === 'Global Remote').length },
+    { label: 'Kenyan Remote Jobs', value: 'Kenyan Remote', count: store.gigs.filter(g => g.category === 'Kenyan Remote').length },
     { label: 'Campus Escrow Gigs', value: 'INTERNAL_ESCROW', count: store.gigs.filter(g => g.originType === 'INTERNAL_ESCROW').length },
-    { label: 'AI Annotation (Remote)', value: 'AI Annotation', count: store.gigs.filter(g => g.category === 'AI Annotation').length },
-    { label: 'Tutoring & Code Help', value: 'Tutoring', count: store.gigs.filter(g => g.category === 'Tutoring' || g.category === 'Tech & Design').length },
+    { label: 'AI Annotation', value: 'AI Annotation', count: store.gigs.filter(g => g.category === 'AI Annotation').length },
+    { label: 'Tutoring & Code', value: 'Tutoring', count: store.gigs.filter(g => g.category === 'Tutoring' || g.category === 'Tech & Design').length },
     { label: 'Attachments & Internships', value: 'Attachment & Internship', count: store.gigs.filter(g => g.category === 'Attachment & Internship').length },
   ];
 

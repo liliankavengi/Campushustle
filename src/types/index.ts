@@ -38,7 +38,14 @@ export interface FinancialLog {
   loggedAt: string;
 }
 
-export type GigCategory = 'Campus Task' | 'AI Annotation' | 'Tutoring' | 'Tech & Design' | 'Attachment & Internship';
+export type GigCategory = 
+  | 'Campus Task' 
+  | 'AI Annotation' 
+  | 'Tutoring' 
+  | 'Tech & Design' 
+  | 'Attachment & Internship'
+  | 'Global Remote'
+  | 'Kenyan Remote';
 export type EscrowStatus = 'UNFUNDED' | 'HELD' | 'RELEASED' | 'REFUNDED';
 export type OriginType = 'INTERNAL_ESCROW' | 'EXTERNAL_PARTNER' | 'SCRAPED';
 export type DeviceRequirement = 'SMARTPHONE_OK' | 'LAPTOP_REQUIRED';
