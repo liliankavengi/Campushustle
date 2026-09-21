@@ -17,6 +17,7 @@ import { MpesaModal } from '../../components/MpesaModal';
 import { EscrowModal } from '../../components/EscrowModal';
 import { DarajaArchitectureInspector } from '../../components/DarajaArchitectureInspector';
 import { AuthCard } from '../../components/AuthCard';
+import { SubscriptionPaywallGate } from '../../components/SubscriptionPaywallGate';
 import { ExternalRedirectModal } from '../../components/ExternalRedirectModal';
 import { Gig } from '../../types';
 import { 
@@ -110,6 +111,25 @@ export default function StudentAppPage() {
           </div>
         </main>
       </div>
+    );
+  }
+
+  // ─── NOT SUBSCRIBED: Enforce $1 Standard Subscription Gate ──────────────────
+  if (!hasPass) {
+    return (
+      <>
+        <SubscriptionPaywallGate
+          onOpenMpesaModal={(phone) => {
+            if (phone) store.user.phoneNumber = phone;
+            handleTriggerPaywall('1-Semester All-Access Platform Pass ($1 / KSh 130)');
+          }}
+        />
+        <MpesaModal
+          isOpen={isPaywallOpen}
+          onClose={() => setIsPaywallOpen(false)}
+          targetFeatureName={paywallFeatureName}
+        />
+      </>
     );
   }
 

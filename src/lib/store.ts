@@ -489,6 +489,38 @@ export class CampusHustleStore {
     this.notify();
   }
 
+  activateStandardPass(mpesaReceipt?: string): Subscription {
+    const now = new Date();
+    const expires = new Date(now.getTime() + 120 * 24 * 60 * 60 * 1000);
+    const receipt = mpesaReceipt || `QKD${Math.floor(10000000 + Math.random() * 90000000)}KE`;
+    const sub: Subscription = {
+      id: `sub-${Date.now()}`,
+      userId: this.user.id,
+      amount: 130,
+      mpesaReceipt: receipt,
+      status: 'ACTIVE',
+      serviceType: 'SEMESTER_ALL_ACCESS',
+      expiresAt: expires.toISOString(),
+      createdAt: now.toISOString(),
+    };
+    this.setSubscription(sub);
+
+    const tx: MpesaTransaction = {
+      id: `tx-${Date.now()}`,
+      checkoutRequestId: `ws_CO_${Date.now()}`,
+      merchantRequestId: `MR_${Date.now()}`,
+      phoneNumber: this.user.phoneNumber || '254712000000',
+      amount: 130,
+      purpose: 'SUBSCRIPTION_PASS',
+      mpesaReceipt: receipt,
+      status: 'SUCCESS',
+      createdAt: now.toISOString(),
+    };
+    this.transactions = [tx, ...this.transactions];
+    this.notify();
+    return sub;
+  }
+
   addTransaction(tx: Omit<MpesaTransaction, 'id' | 'createdAt'>) {
     const newTx: MpesaTransaction = {
       id: `tx-${Date.now()}`,
