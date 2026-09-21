@@ -24,7 +24,10 @@ import {
   BarChart3,
   Home,
   Zap,
-  ArrowLeft
+  ArrowLeft,
+  Sparkles,
+  Globe,
+  Star
 } from 'lucide-react';
 
 export default function StudentAppPage() {
@@ -41,7 +44,7 @@ export default function StudentAppPage() {
   
   // Modals
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
-  const [paywallFeatureName, setPaywallFeatureName] = useState<string>('Verified Campus Gigs & Pass');
+  const [paywallFeatureName, setPaywallFeatureName] = useState<string>('Full CampusHustle Access');
   const [isEscrowModalOpen, setIsEscrowModalOpen] = useState(false);
   const [isArchitectureOpen, setIsArchitectureOpen] = useState(false);
 
@@ -50,13 +53,12 @@ export default function StudentAppPage() {
     setIsPaywallOpen(true);
   };
 
-  // If NOT logged in, show the App Launch Auth Gate
+  // ─── NOT LOGGED IN: Show Auth Gate ─────────────────────────────────────────
   if (!isLoggedIn) {
     return (
       <div className={`min-h-screen flex flex-col transition-colors ${
         isLight ? 'bg-slate-50 text-slate-900' : 'bg-slate-950 text-slate-100'
       }`}>
-        {/* Simple Top Navigation */}
         <header className={`border-b px-4 sm:px-8 py-3.5 flex items-center justify-between transition-colors ${
           isLight ? 'bg-white border-slate-200' : 'bg-slate-900/90 border-slate-800'
         }`}>
@@ -68,7 +70,6 @@ export default function StudentAppPage() {
               Campus<span className="text-emerald-600">Hustle</span>
             </span>
           </div>
-
           <Link
             href="/"
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
@@ -82,7 +83,6 @@ export default function StudentAppPage() {
           </Link>
         </header>
 
-        {/* Auth Gate Card Container */}
         <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
           <div className="w-full max-w-md space-y-4">
             <div className="text-center space-y-1">
@@ -96,12 +96,9 @@ export default function StudentAppPage() {
                 Create your student account or continue with Google to access your gigs board, runway calculator, and MMF yield charts.
               </p>
             </div>
-
             <AuthCard
               initialMode="SIGN_UP"
-              onSuccess={() => {
-                // Store updates automatically
-              }}
+              onSuccess={() => {}}
             />
           </div>
         </main>
@@ -129,7 +126,7 @@ export default function StudentAppPage() {
     }`}>
       {/* Compact Top Header */}
       <Header
-        onOpenPaywall={() => handleTriggerPaywall('1-Semester Unlimited Campus Pass')}
+        onOpenPaywall={() => handleTriggerPaywall('Full CampusHustle Access')}
         onOpenEscrowModal={() => setIsEscrowModalOpen(true)}
         onOpenArchitecture={() => setIsArchitectureOpen(true)}
         onToggleSidebar={() => setIsSidebarOpenMobile(true)}
@@ -138,7 +135,7 @@ export default function StudentAppPage() {
       />
 
       {/* Main Full-Width Layout */}
-      <div className="flex-1 flex w-full">
+      <div className="flex-1 flex w-full relative">
         {/* Left Minimizable / Mobile Sidebar */}
         <Sidebar
           activeTab={activeTab}
@@ -147,7 +144,7 @@ export default function StudentAppPage() {
           setSelectedCategory={setSelectedCategory}
           deviceFilter={deviceFilter}
           setDeviceFilter={setDeviceFilter}
-          onOpenPaywall={() => handleTriggerPaywall('1-Semester Unlimited Campus Pass')}
+          onOpenPaywall={() => handleTriggerPaywall('Full CampusHustle Access')}
           onOpenEscrowModal={() => setIsEscrowModalOpen(true)}
           onOpenArchitecture={() => setIsArchitectureOpen(true)}
           isOpenMobile={isSidebarOpenMobile}
@@ -157,12 +154,12 @@ export default function StudentAppPage() {
         />
 
         {/* Main Content Area */}
-        <main className="flex-1 min-w-0 px-3 sm:px-4 lg:px-5 py-3 space-y-3">
-          {/* Quick Metrics Ribbon (2 cols on mobile, 4 on desktop) */}
+        <main className={`flex-1 min-w-0 px-3 sm:px-4 lg:px-5 py-3 space-y-3 ${!hasPass ? 'pointer-events-none select-none' : ''}`}>
+          {/* Quick Metrics Ribbon */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5">
             <div 
-              onClick={() => setActiveTab('GIGS')}
-              className={`rounded-xl p-3 border transition-all cursor-pointer ${
+              onClick={() => hasPass && setActiveTab('GIGS')}
+              className={`rounded-xl p-3 border transition-all ${hasPass ? 'cursor-pointer' : 'cursor-default'} ${
                 activeTab === 'GIGS' 
                   ? isLight ? 'border-emerald-500 bg-emerald-50/40 shadow-xs' : 'border-emerald-500 bg-slate-900 shadow-sm'
                   : isLight ? 'bg-white border-slate-200 hover:border-slate-300' : 'bg-slate-900 border-slate-800 hover:border-slate-700'
@@ -181,8 +178,8 @@ export default function StudentAppPage() {
             </div>
 
             <div 
-              onClick={() => setActiveTab('RUNWAY')}
-              className={`rounded-xl p-3 border transition-all cursor-pointer ${
+              onClick={() => hasPass && setActiveTab('RUNWAY')}
+              className={`rounded-xl p-3 border transition-all ${hasPass ? 'cursor-pointer' : 'cursor-default'} ${
                 activeTab === 'RUNWAY' 
                   ? isLight ? 'border-emerald-500 bg-emerald-50/40 shadow-xs' : 'border-emerald-500 bg-slate-900 shadow-sm'
                   : isLight ? 'bg-white border-slate-200 hover:border-slate-300' : 'bg-slate-900 border-slate-800 hover:border-slate-700'
@@ -201,8 +198,8 @@ export default function StudentAppPage() {
             </div>
 
             <div 
-              onClick={() => setActiveTab('MMF')}
-              className={`rounded-xl p-3 border transition-all cursor-pointer ${
+              onClick={() => hasPass && setActiveTab('MMF')}
+              className={`rounded-xl p-3 border transition-all ${hasPass ? 'cursor-pointer' : 'cursor-default'} ${
                 activeTab === 'MMF' 
                   ? isLight ? 'border-emerald-500 bg-emerald-50/40 shadow-xs' : 'border-emerald-500 bg-slate-900 shadow-sm'
                   : isLight ? 'bg-white border-slate-200 hover:border-slate-300' : 'bg-slate-900 border-slate-800 hover:border-slate-700'
@@ -221,9 +218,9 @@ export default function StudentAppPage() {
             </div>
 
             <div 
-              onClick={() => setIsEscrowModalOpen(true)}
-              className={`rounded-xl p-3 border transition-all cursor-pointer ${
-                isLight ? 'bg-white border-slate-200 hover:border-emerald-500' : 'bg-slate-900 border-slate-800 hover:border-emerald-500'
+              onClick={() => hasPass && setIsEscrowModalOpen(true)}
+              className={`rounded-xl p-3 border transition-all ${hasPass ? 'cursor-pointer hover:border-emerald-500' : 'cursor-default'} ${
+                isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
               }`}
             >
               <div className="flex items-center justify-between text-[11px]">
@@ -250,11 +247,8 @@ export default function StudentAppPage() {
               onOpenEscrowModal={() => setIsEscrowModalOpen(true)}
             />
           )}
-
           {activeTab === 'RUNWAY' && <RunwayEngine onOpenPaywall={handleTriggerPaywall} />}
-
           {activeTab === 'MMF' && <YieldSparklines />}
-
           {activeTab === 'LEDGER' && (
             <div className={`rounded-xl p-4 border space-y-4 transition-colors ${
               isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900 border-slate-800'
@@ -278,7 +272,6 @@ export default function StudentAppPage() {
                   Architecture Inspector
                 </button>
               </div>
-
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs min-w-[550px]">
                   <thead className={`border-b text-[11px] ${
@@ -317,38 +310,87 @@ export default function StudentAppPage() {
               </div>
             </div>
           )}
-
-          {activeTab === 'ADMIN' && (
-            <div className={`rounded-xl p-6 border text-center space-y-3 transition-colors ${
-              isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900 border-slate-800'
-            }`}>
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto">
-                <BarChart3 className="w-5 h-5" />
-              </div>
-              <h2 className="text-base font-bold">
-                Admin Command Center
-              </h2>
-              <p className={`text-xs max-w-md mx-auto ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                The full Admin Dashboard has been isolated to a dedicated secure portal for <strong className="text-emerald-600 font-mono">liliankavengi502@gmail.com</strong>.
-              </p>
-              <Link
-                href="/admin"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all"
-              >
-                <span>Go to Secure Admin Portal</span>
-                <CheckCircle2 className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          )}
         </main>
+
+        {/* ─── FULL-APP PAYWALL OVERLAY (shown when not paid) ─────────────────── */}
+        {!hasPass && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center p-4"
+            style={{ backdropFilter: 'blur(8px)', background: isLight ? 'rgba(248,250,252,0.85)' : 'rgba(2,6,23,0.88)' }}
+          >
+            <div className={`w-full max-w-md rounded-2xl border shadow-2xl overflow-hidden ${
+              isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+            }`}>
+              {/* Header */}
+              <div className="p-5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-center">
+                <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-3">
+                  <Lock className="w-6 h-6 text-white" />
+                </div>
+                <h2 className="text-lg font-black">Unlock Full Access</h2>
+                <p className="text-emerald-100 text-xs mt-1">One-time payment — everything unlocked forever</p>
+              </div>
+
+              <div className="p-5 space-y-4">
+                {/* Price callout */}
+                <div className={`rounded-xl p-4 border text-center ${
+                  isLight ? 'bg-emerald-50 border-emerald-200' : 'bg-emerald-950/30 border-emerald-800'
+                }`}>
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-4xl font-black text-emerald-600">$1</span>
+                    <div className="text-left">
+                      <div className="text-xs font-bold text-emerald-600">≈ KSh 130</div>
+                      <div className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>One-time · No renewals</div>
+                    </div>
+                  </div>
+                  <p className={`text-[11px] mt-2 ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
+                    Paid via M-Pesa STK push — instant unlock
+                  </p>
+                </div>
+
+                {/* What's unlocked */}
+                <ul className="space-y-2">
+                  {[
+                    { icon: <Globe className="w-3.5 h-3.5 text-emerald-600" />, text: 'Global & Kenyan remote job listings' },
+                    { icon: <Briefcase className="w-3.5 h-3.5 text-emerald-600" />, text: 'Campus escrow gigs + poster contacts' },
+                    { icon: <Flame className="w-3.5 h-3.5 text-emerald-600" />, text: 'HELB runway calculator & burn rate' },
+                    { icon: <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />, text: 'MMF yield tracker (up to 16.85% EAR)' },
+                    { icon: <History className="w-3.5 h-3.5 text-emerald-600" />, text: 'M-Pesa ledger & transaction history' },
+                    { icon: <Sparkles className="w-3.5 h-3.5 text-emerald-600" />, text: 'Live task feed auto-updates' },
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-center gap-2.5 text-xs">
+                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                        isLight ? 'bg-emerald-50 border border-emerald-200' : 'bg-emerald-950/40 border border-emerald-800'
+                      }`}>
+                        {item.icon}
+                      </div>
+                      <span className={isLight ? 'text-slate-700' : 'text-slate-300'}>{item.text}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* CTA Button */}
+                <button
+                  onClick={() => handleTriggerPaywall('Full CampusHustle Access — All Features')}
+                  className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-sm shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Smartphone className="w-4 h-4" />
+                  <span>Pay KSh 130 via M-Pesa → Unlock All</span>
+                </button>
+
+                <p className={`text-center text-[10px] ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>
+                  🔒 Secured by PayHero · M-Pesa STK Push · Instant activation
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Mobile Bottom Navigation Bar (Visible on mobile only for 1-tap switching) */}
+      {/* Mobile Bottom Navigation */}
       <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t flex items-center justify-around h-14 backdrop-blur-md transition-colors ${
         isLight ? 'bg-white/95 border-slate-200 text-slate-600' : 'bg-slate-950/95 border-slate-800 text-slate-400'
       }`}>
         <button
-          onClick={() => setActiveTab('GIGS')}
+          onClick={() => hasPass ? setActiveTab('GIGS') : handleTriggerPaywall('Full CampusHustle Access')}
           className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
             activeTab === 'GIGS' ? 'text-emerald-600' : 'hover:text-slate-900 dark:hover:text-white'
           }`}
@@ -358,7 +400,7 @@ export default function StudentAppPage() {
         </button>
 
         <button
-          onClick={() => setActiveTab('RUNWAY')}
+          onClick={() => hasPass ? setActiveTab('RUNWAY') : handleTriggerPaywall('Full CampusHustle Access')}
           className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
             activeTab === 'RUNWAY' ? 'text-emerald-600' : 'hover:text-slate-900 dark:hover:text-white'
           }`}
@@ -368,7 +410,7 @@ export default function StudentAppPage() {
         </button>
 
         <button
-          onClick={() => setActiveTab('MMF')}
+          onClick={() => hasPass ? setActiveTab('MMF') : handleTriggerPaywall('Full CampusHustle Access')}
           className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
             activeTab === 'MMF' ? 'text-emerald-600' : 'hover:text-slate-900 dark:hover:text-white'
           }`}
@@ -378,7 +420,7 @@ export default function StudentAppPage() {
         </button>
 
         <button
-          onClick={() => setActiveTab('LEDGER')}
+          onClick={() => hasPass ? setActiveTab('LEDGER') : handleTriggerPaywall('Full CampusHustle Access')}
           className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
             activeTab === 'LEDGER' ? 'text-emerald-600' : 'hover:text-slate-900 dark:hover:text-white'
           }`}
@@ -387,13 +429,16 @@ export default function StudentAppPage() {
           <span>Ledger</span>
         </button>
 
-        <Link
-          href="/admin"
-          className="flex flex-col items-center gap-0.5 text-[10px] font-bold hover:text-emerald-600"
-        >
-          <BarChart3 className="w-4 h-4 text-emerald-600" />
-          <span>Admin</span>
-        </Link>
+        {/* Unlock CTA on mobile nav when not paid */}
+        {!hasPass && (
+          <button
+            onClick={() => handleTriggerPaywall('Full CampusHustle Access')}
+            className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-emerald-600 animate-pulse"
+          >
+            <Lock className="w-4 h-4" />
+            <span>Unlock</span>
+          </button>
+        )}
       </nav>
 
       {/* Global Modals */}
