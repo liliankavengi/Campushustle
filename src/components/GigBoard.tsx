@@ -27,7 +27,9 @@ import {
   Phone,
   MessageSquare,
   Globe,
-  Share2
+  Share2,
+  Zap,
+  Star
 } from 'lucide-react';
 
 interface GigBoardProps {
@@ -65,41 +67,46 @@ export const GigBoard: React.FC<GigBoardProps> = ({
     { label: 'Attachments & Internships', value: 'Attachment & Internship', count: store.gigs.filter(g => g.category === 'Attachment & Internship').length },
   ];
 
-  const filteredGigs = store.gigs.filter((gig) => {
-    const matchesSearch = 
-      gig.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      gig.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (gig.platformName && gig.platformName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      gig.skills.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredGigs = store.gigs
+    .filter((gig) => {
+      const matchesSearch = 
+        gig.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        gig.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (gig.platformName && gig.platformName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        gig.skills.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    let matchesCategory = true;
-    if (selectedCategory === 'INTERNAL_ESCROW') {
-      matchesCategory = gig.originType === 'INTERNAL_ESCROW';
-    } else if (selectedCategory === 'Tutoring') {
-      matchesCategory = gig.category === 'Tutoring' || gig.category === 'Tech & Design';
-    } else if (selectedCategory !== 'ALL') {
-      matchesCategory = gig.category === selectedCategory;
-    }
+      let matchesCategory = true;
+      if (selectedCategory === 'INTERNAL_ESCROW') {
+        matchesCategory = gig.originType === 'INTERNAL_ESCROW';
+      } else if (selectedCategory === 'Tutoring') {
+        matchesCategory = gig.category === 'Tutoring' || gig.category === 'Tech & Design';
+      } else if (selectedCategory !== 'ALL') {
+        matchesCategory = gig.category === selectedCategory;
+      }
 
-    const matchesDevice = deviceFilter === 'ALL' || gig.deviceRequirement === deviceFilter;
+      const matchesDevice = deviceFilter === 'ALL' || gig.deviceRequirement === deviceFilter;
 
-    const matchesCampus = 
-      gig.campus === 'ALL' || 
-      gig.campus === store.user.campus || 
-      gig.originType === 'EXTERNAL_PARTNER' ||
-      gig.originType === 'SCRAPED';
+      const matchesCampus = 
+        gig.campus === 'ALL' || 
+        gig.campus === store.user.campus || 
+        gig.originType === 'EXTERNAL_PARTNER' ||
+        gig.originType === 'SCRAPED';
 
-    return matchesSearch && matchesCategory && matchesDevice && matchesCampus;
-  });
+      return matchesSearch && matchesCategory && matchesDevice && matchesCampus;
+    })
+    // Sort featured gigs to top
+    .sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0));
 
   const handleOpenGig = (gig: Gig) => {
-    // If it's an internal gig and student does not have an active pass, prompt micro-paywall to unlock client contact
-    if (gig.originType === 'INTERNAL_ESCROW' && !hasPass) {
-      onOpenPaywall(`Unlock Contact for "${gig.title}"`);
+    setActiveGigModal(gig);
+  };
+
+  const handleTakeBounty = (e: React.MouseEvent, gig: Gig) => {
+    e.stopPropagation();
+    if (!hasPass) {
+      onOpenPaywall(`Unlock Direct Contact & Bounties for "${gig.title}"`);
       return;
     }
-
-    // Set modal to view job details & direct link
     store.applyToGig(gig.id);
     setAppliedGigs((prev) => new Set(prev).add(gig.id));
     setActiveGigModal(gig);
@@ -107,17 +114,58 @@ export const GigBoard: React.FC<GigBoardProps> = ({
 
   const handleDirectExternalOpen = (e: React.MouseEvent, gig: Gig) => {
     e.stopPropagation();
+    if (!hasPass) {
+      onOpenPaywall(`Unlock Direct Application Portal for "${gig.title}"`);
+      return;
+    }
     if (gig.externalApplyUrl) {
       window.open(gig.externalApplyUrl, '_blank', 'noopener,noreferrer');
       store.applyToGig(gig.id);
       setAppliedGigs((prev) => new Set(prev).add(gig.id));
     } else {
-      handleOpenGig(gig);
+      setActiveGigModal(gig);
     }
+  };
+
+  const handleTaskPulseLaunch = () => {
+    if (!hasPass) {
+      onOpenPaywall('Unlock Real-Time Live Feed Pulse & Auto-Dispatch');
+      return;
+    }
+    store.triggerManualTaskLaunch();
   };
 
   return (
     <div className="space-y-3">
+      {/* Monetization Banner (Revenue Stream 2 - Sponsored Listings) */}
+      <div className={`rounded-xl p-3 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 transition-colors ${
+        isLight 
+          ? 'bg-gradient-to-r from-amber-50 via-emerald-50 to-white border-amber-200' 
+          : 'bg-gradient-to-r from-slate-900 via-amber-950/30 to-slate-900 border-amber-800/40'
+      }`}>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-600 flex items-center justify-center flex-shrink-0">
+            <Zap className="w-4 h-4 fill-amber-500" />
+          </div>
+          <div className="text-xs">
+            <span className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+              <span>⚡ Need Your Campus Task Done Fast?</span>
+              <span className="text-[10px] bg-amber-500/20 px-1.5 py-0.2 rounded font-mono font-bold">+KSh 250</span>
+            </span>
+            <p className={`text-[11px] ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+              Feature your listing at the top of the feed to receive verified student applicants in under 45 minutes.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onOpenEscrowModal}
+          className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>Post & Boost Gig</span>
+        </button>
+      </div>
+
       {/* Live Auto-Updating Status Ribbon */}
       <div className={`rounded-xl p-3 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 transition-colors ${
         isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900 border-slate-800'
@@ -145,7 +193,7 @@ export const GigBoard: React.FC<GigBoardProps> = ({
                 <span>Next auto-update in {store.nextAutoUpdateSeconds}s</span>
               </span>
               <span>•</span>
-              <span>Pulse: {store.isAutoUpdating ? 'Active (Auto-refresh on)' : 'Paused'}</span>
+              <span>Pulse: {store.isAutoUpdating ? 'Active' : 'Paused'}</span>
             </div>
           </div>
         </div>
@@ -159,16 +207,15 @@ export const GigBoard: React.FC<GigBoardProps> = ({
                 ? isLight ? 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-750'
                 : 'bg-emerald-600 text-white border-emerald-500'
             }`}
-            title={store.isAutoUpdating ? 'Pause Auto-Updating' : 'Resume Auto-Updating'}
           >
             {store.isAutoUpdating ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-            <span>{store.isAutoUpdating ? 'Pause Feed' : 'Resume Feed'}</span>
+            <span>{store.isAutoUpdating ? 'Pause' : 'Resume'}</span>
           </button>
 
           <button
-            onClick={() => store.triggerManualTaskLaunch()}
+            onClick={handleTaskPulseLaunch}
             className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-            title="Launch an immediate live task from Kenyan campuses"
+            title="Launch an immediate live task pulse"
           >
             <RefreshCw className="w-3 h-3" />
             <span>Launch Task Pulse</span>
@@ -266,7 +313,7 @@ export const GigBoard: React.FC<GigBoardProps> = ({
         </div>
       </div>
 
-      {/* Gigs List with Platform Source Badge and Direct External Listing Opener */}
+      {/* Gigs List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {filteredGigs.map((gig) => {
           const isApplied = appliedGigs.has(gig.id);
@@ -277,14 +324,25 @@ export const GigBoard: React.FC<GigBoardProps> = ({
             <div
               key={gig.id}
               onClick={() => handleOpenGig(gig)}
-              className={`rounded-xl p-4 border flex flex-col justify-between transition-all cursor-pointer hover:border-emerald-500/60 ${
-                isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900 border-slate-800'
+              className={`rounded-xl p-4 border flex flex-col justify-between transition-all cursor-pointer relative ${
+                gig.isFeatured
+                  ? isLight 
+                    ? 'bg-white border-amber-300 ring-1 ring-amber-400/30 shadow-md' 
+                    : 'bg-slate-900 border-amber-600/60 ring-1 ring-amber-500/30 shadow-md'
+                  : isLight ? 'bg-white border-slate-200 shadow-sm hover:border-slate-300' : 'bg-slate-900 border-slate-800 hover:border-slate-700'
               }`}
             >
               <div className="space-y-2.5">
-                {/* Top Row: Platform Source Badge + Launch Timestamp */}
+                {/* Top Row: Featured Badge + Platform Source + Launch Timestamp */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-1.5 flex-wrap">
+                    {gig.isFeatured && (
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-amber-600 text-white flex items-center gap-1 shadow-xs">
+                        <Zap className="w-2.5 h-2.5 fill-white" />
+                        <span>Featured</span>
+                      </span>
+                    )}
+
                     <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
                       gig.originType === 'INTERNAL_ESCROW'
                         ? isLight ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-emerald-950/50 text-emerald-400 border-emerald-800'
@@ -300,7 +358,7 @@ export const GigBoard: React.FC<GigBoardProps> = ({
                     </span>
                   </div>
 
-                  {/* Exact Launch Timestamp */}
+                  {/* Launch Timestamp */}
                   <div className={`flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-md border flex-shrink-0 ${
                     launchTimeInfo.relative === 'Just now'
                       ? 'bg-emerald-600 text-white border-emerald-500 font-bold animate-pulse'
@@ -353,7 +411,7 @@ export const GigBoard: React.FC<GigBoardProps> = ({
                 </div>
               </div>
 
-              {/* Bottom Row: Bounty Reward in USD + Action Button Opening Job Listing */}
+              {/* Bottom Row: Bounty in USD + Action Button */}
               <div className={`mt-4 pt-3 border-t flex items-center justify-between gap-2 ${
                 isLight ? 'border-slate-200' : 'border-slate-800'
               }`}>
@@ -376,17 +434,13 @@ export const GigBoard: React.FC<GigBoardProps> = ({
                     <button
                       onClick={(e) => handleDirectExternalOpen(e, gig)}
                       className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-                      title={`Open directly on ${gig.platformName || 'job site'}`}
                     >
-                      <span>Open on {gig.platformName ? gig.platformName.split(' ')[0] : 'Listing'}</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Apply</span>
+                      {hasPass ? <ExternalLink className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
                     </button>
                   ) : (
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenGig(gig);
-                      }}
+                      onClick={(e) => handleTakeBounty(e, gig)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                         isApplied
                           ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
@@ -401,7 +455,7 @@ export const GigBoard: React.FC<GigBoardProps> = ({
                       ) : (
                         <>
                           <span>Take Bounty</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
+                          {hasPass ? <ArrowRight className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
                         </>
                       )}
                     </button>
@@ -423,12 +477,12 @@ export const GigBoard: React.FC<GigBoardProps> = ({
 
       {/* Interactive Job Listing Modal */}
       {activeGigModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-150">
           <div className={`relative w-full max-w-lg rounded-2xl border shadow-2xl overflow-hidden transition-colors ${
             isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-900 border-slate-800 text-slate-100'
           }`}>
             {/* Header */}
-            <div className="p-4 sm:p-5 bg-emerald-600 text-white flex items-center justify-between">
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white">
                   <Briefcase className="w-4 h-4" />
@@ -444,7 +498,7 @@ export const GigBoard: React.FC<GigBoardProps> = ({
               </div>
               <button
                 onClick={() => setActiveGigModal(null)}
-                className="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
+                className="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -525,8 +579,29 @@ export const GigBoard: React.FC<GigBoardProps> = ({
                 </div>
               </div>
 
-              {/* External Direct Opener OR Internal Direct Phone Contact */}
-              {activeGigModal.externalApplyUrl ? (
+              {/* Action Contact / Application Section */}
+              {!hasPass ? (
+                <div className={`p-4 rounded-xl border text-center space-y-3 ${
+                  isLight ? 'bg-amber-50/60 border-amber-200' : 'bg-amber-950/20 border-amber-800/60'
+                }`}>
+                  <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+                    <Lock className="w-4 h-4" />
+                    <span>Poster Contacts & Direct Application Locked</span>
+                  </div>
+                  <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
+                    Unlock verified WhatsApp contacts, phone numbers, and external screening rubrics for a one-time fee of <strong>$1 (KSh 130)</strong>.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setActiveGigModal(null);
+                      onOpenPaywall(`Unlock Contact & Application for "${activeGigModal.title}"`);
+                    }}
+                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
+                  >
+                    Pay KSh 130 via M-Pesa to Unlock
+                  </button>
+                </div>
+              ) : activeGigModal.externalApplyUrl ? (
                 <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
                   <div className={`p-2.5 rounded-xl border text-xs flex items-center justify-between gap-2 ${
                     isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
@@ -541,9 +616,10 @@ export const GigBoard: React.FC<GigBoardProps> = ({
                     href={activeGigModal.externalApplyUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow-sm flex items-center justify-center gap-2 transition-all"
+                    onClick={() => store.applyToGig(activeGigModal.id)}
+                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
                   >
-                    <span>Open Listing on {activeGigModal.platformName || 'Job Portal'}</span>
+                    <span>Open Application Portal ({activeGigModal.platformName || 'Job Portal'})</span>
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 </div>
@@ -552,24 +628,26 @@ export const GigBoard: React.FC<GigBoardProps> = ({
                   <div className="flex items-center justify-between text-xs font-semibold">
                     <span>Direct Poster Contact:</span>
                     <span className="text-emerald-600 font-mono font-bold">
-                      +{activeGigModal.posterPhone || store.user.phoneNumber}
+                      +{activeGigModal.posterPhone || '254715516715'}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <a
-                      href={`https://wa.me/${activeGigModal.posterPhone || store.user.phoneNumber}?text=Hi%20I%20am%20applying%20for%20your%20CampusHustle%20task:%20${encodeURIComponent(activeGigModal.title)}`}
+                      href={`https://wa.me/${activeGigModal.posterPhone || '254715516715'}?text=Hi%20I%20am%20applying%20for%20your%20CampusHustle%20task:%20${encodeURIComponent(activeGigModal.title)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-center"
+                      onClick={() => store.applyToGig(activeGigModal.id)}
+                      className="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-center cursor-pointer"
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
                       <span>Chat on WhatsApp</span>
                     </a>
 
                     <a
-                      href={`tel:+${activeGigModal.posterPhone || store.user.phoneNumber}`}
-                      className={`py-2.5 border text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-center ${
+                      href={`tel:+${activeGigModal.posterPhone || '254715516715'}`}
+                      onClick={() => store.applyToGig(activeGigModal.id)}
+                      className={`py-2.5 border text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-center cursor-pointer ${
                         isLight ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-800' : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-white'
                       }`}
                     >

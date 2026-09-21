@@ -153,6 +153,7 @@ export const INITIAL_GIGS: Gig[] = [
     qualificationGuide: 'Quick 20-min benchmark assessment. Direct remote registration open globally.',
     createdAt: '2026-09-20T10:15:00Z',
     applicantCount: 248,
+    isFeatured: true,
   },
   {
     id: 'gig-global-002',
@@ -172,6 +173,7 @@ export const INITIAL_GIGS: Gig[] = [
     qualificationGuide: 'Pass the starter coding test. Works on any laptop worldwide.',
     createdAt: '2026-09-19T14:00:00Z',
     applicantCount: 195,
+    isFeatured: true,
   },
   {
     id: 'gig-global-003',

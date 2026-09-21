@@ -4,11 +4,16 @@ import React, { useState } from 'react';
 import { useCampusStore } from '../lib/store';
 import { KENYAN_MMF_FUNDS } from '../lib/mockData';
 import { MmfFund } from '../types';
-import { TrendingUp, ArrowUpRight, Calculator, ShieldCheck, Zap, Info } from 'lucide-react';
+import { TrendingUp, ArrowUpRight, Calculator, ShieldCheck, Zap, Info, Lock, Bell, Smartphone } from 'lucide-react';
 
-export const YieldSparklines: React.FC = () => {
+interface YieldSparklinesProps {
+  onOpenPaywall?: (featureName: string) => void;
+}
+
+export const YieldSparklines: React.FC<YieldSparklinesProps> = ({ onOpenPaywall }) => {
   const store = useCampusStore();
   const isLight = store.theme === 'light';
+  const hasPass = store.hasActivePass();
 
   const [dailySavings, setDailySavings] = useState(100);
   const [selectedFund, setSelectedFund] = useState<MmfFund>(KENYAN_MMF_FUNDS[0]);
@@ -52,6 +57,13 @@ export const YieldSparklines: React.FC = () => {
   const totalInvestedYear = dailySavings * yearDays;
   const futureValueYear = dailySavings * (((Math.pow(1 + dailyRate, yearDays) - 1) / dailyRate) * (1 + dailyRate));
   const interestEarnedYear = Math.round(futureValueYear - totalInvestedYear);
+
+  const handleAction = (featureName: string) => {
+    if (!hasPass && onOpenPaywall) {
+      onOpenPaywall(featureName);
+      return;
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -132,16 +144,27 @@ export const YieldSparklines: React.FC = () => {
       <div className={`rounded-xl p-4 sm:p-5 border transition-colors ${
         isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900 border-slate-800'
       }`}>
-        <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-2 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <Calculator className="w-4 h-4 text-emerald-600" />
             <h3 className="text-sm font-bold">
               Compound Interest Growth Simulator: {selectedFund.name}
             </h3>
           </div>
-          <span className="text-xs text-emerald-600 font-bold font-mono">
-            {selectedFund.effectiveAnnualRatePct}% EAR
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleAction(`Setup Daily Rate SMS Alerts for ${selectedFund.name}`)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold border flex items-center gap-1.5 transition-colors cursor-pointer ${
+                isLight ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700' : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-slate-300'
+              }`}
+            >
+              {hasPass ? <Bell className="w-3 h-3 text-emerald-600" /> : <Lock className="w-3 h-3 text-emerald-600" />}
+              <span>Rate Alerts</span>
+            </button>
+            <span className="text-xs text-emerald-600 font-bold font-mono">
+              {selectedFund.effectiveAnnualRatePct}% EAR
+            </span>
+          </div>
         </div>
 
         {/* Slider Input */}

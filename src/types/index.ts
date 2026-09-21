@@ -72,6 +72,7 @@ export interface Gig {
   deadline?: string;
   createdAt: string;
   applicantCount: number;
+  isFeatured?: boolean;
 }
 
 export type MpesaPurpose = 'SUBSCRIPTION_PASS' | 'GIG_ESCROW' | 'B2C_PAYOUT';

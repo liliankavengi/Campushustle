@@ -17,7 +17,9 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Download,
+  CheckCircle2
 } from 'lucide-react';
 
 interface RunwayEngineProps {
@@ -50,6 +52,10 @@ export const RunwayEngine: React.FC<RunwayEngineProps> = ({ onOpenPaywall }) => 
 
   const handleAddLog = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hasPass) {
+      onOpenPaywall('Unlock HELB Runway Tracker & Expense Engine');
+      return;
+    }
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) return;
 
     store.addFinancialLog({
@@ -61,6 +67,25 @@ export const RunwayEngine: React.FC<RunwayEngineProps> = ({ onOpenPaywall }) => 
 
     setAmount('');
     setDescription('');
+  };
+
+  const handleExportStatement = () => {
+    if (!hasPass) {
+      onOpenPaywall('Unlock HELB & Campus Runway Statement PDF Exporter');
+      return;
+    }
+    // Export CSV
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + ["Date,Type,Category,Description,Amount (KES)"]
+      .concat(store.finances.map(f => `${new Date(f.loggedAt).toLocaleDateString()},${f.transactionType},${f.category},"${f.description || ''}",${f.amount}`))
+      .join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `CampusHustle_Runway_Statement_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const categoryIcons: Record<ExpenseCategory, React.ReactNode> = {
@@ -174,7 +199,7 @@ export const RunwayEngine: React.FC<RunwayEngineProps> = ({ onOpenPaywall }) => 
               <button
                 type="button"
                 onClick={() => setType('EXPENSE')}
-                className={`py-2 rounded-lg font-bold transition-all ${
+                className={`py-2 rounded-lg font-bold transition-all cursor-pointer ${
                   type === 'EXPENSE'
                     ? 'bg-slate-800 text-white shadow-sm'
                     : isLight ? 'text-slate-600' : 'text-slate-400'
@@ -185,7 +210,7 @@ export const RunwayEngine: React.FC<RunwayEngineProps> = ({ onOpenPaywall }) => 
               <button
                 type="button"
                 onClick={() => setType('INCOME')}
-                className={`py-2 rounded-lg font-bold transition-all ${
+                className={`py-2 rounded-lg font-bold transition-all cursor-pointer ${
                   type === 'INCOME'
                     ? 'bg-emerald-600 text-white shadow-sm'
                     : isLight ? 'text-slate-600' : 'text-slate-400'
@@ -260,9 +285,10 @@ export const RunwayEngine: React.FC<RunwayEngineProps> = ({ onOpenPaywall }) => 
             {/* Submit */}
             <button
               type="submit"
-              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-[0.99] cursor-pointer"
+              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-[0.99] cursor-pointer flex items-center justify-center gap-1.5"
             >
-              Add Log to Runway Engine
+              {hasPass ? <Plus className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+              <span>Add Log to Runway Engine</span>
             </button>
           </form>
         </div>
@@ -273,12 +299,25 @@ export const RunwayEngine: React.FC<RunwayEngineProps> = ({ onOpenPaywall }) => 
         }`}>
           <div>
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="text-sm font-bold">
-                Campus Financial Logs
-              </h3>
-              <span className={`text-[10px] font-mono ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                {store.finances.length} Entries
-              </span>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold">
+                  Campus Financial Logs
+                </h3>
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
+                  isLight ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-slate-800 border-slate-700 text-slate-300'
+                }`}>
+                  {store.finances.length} Entries
+                </span>
+              </div>
+              <button
+                onClick={handleExportStatement}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold border flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  isLight ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-800' : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-slate-200'
+                }`}
+              >
+                {hasPass ? <Download className="w-3 h-3 text-emerald-600" /> : <Lock className="w-3 h-3 text-emerald-600" />}
+                <span>Export CSV</span>
+              </button>
             </div>
 
             <div className="space-y-2 max-h-[340px] overflow-y-auto pr-1">
