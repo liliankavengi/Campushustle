@@ -30,12 +30,25 @@ export type SubscriptionStatus = 'PENDING' | 'ACTIVE' | 'EXPIRED';
 export interface Subscription {
   id: string;
   userId: string;
-  amount: number; // 130.00 KES
+  amount: number; // 130.00 KES or 200.00 KES
   mpesaReceipt?: string;
   status: SubscriptionStatus;
-  serviceType: 'SEMESTER_ALL_ACCESS' | 'AI_SCREENING_GUIDES' | 'SMS_STATEMENT_SYNC' | 'ESCROW_INSURANCE';
+  serviceType: 'SEMESTER_ALL_ACCESS' | 'AI_SCREENING_GUIDES' | 'SMS_STATEMENT_SYNC' | 'ESCROW_INSURANCE' | 'GEMINI_PRO_FAMILY';
   expiresAt: string;
   createdAt: string;
+}
+
+export interface GeminiFamilyRequest {
+  id: string;
+  userId: string;
+  fullName?: string;
+  googleEmail: string;
+  phoneNumber: string;
+  amountKes: number; // 200 KES
+  mpesaReceipt?: string;
+  status: 'INVITATION_PENDING' | 'ADDED_TO_FAMILY' | 'CANCELLED';
+  requestedAt: string;
+  activatedAt?: string;
 }
 
 export type TransactionType = 'INCOME' | 'EXPENSE';

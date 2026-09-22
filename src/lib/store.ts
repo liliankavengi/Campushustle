@@ -12,7 +12,8 @@ import {
   SavedGig,
   JobReport,
   JobSource,
-  UserProfile
+  UserProfile,
+  GeminiFamilyRequest
 } from '../types';
 import { 
   INITIAL_USER, 
@@ -36,6 +37,7 @@ const STORAGE_KEYS = {
   APPLICATIONS: 'campushustle_applications',
   SAVED_GIGS: 'campushustle_saved_gigs',
   JOB_REPORTS: 'campushustle_job_reports',
+  GEMINI_REQUESTS: 'campushustle_gemini_requests',
   THEME: 'campushustle_theme',
 };
 
@@ -70,6 +72,7 @@ export class CampusHustleStore {
   savedGigs: SavedGig[] = [];
   jobReports: JobReport[] = [];
   jobSources: JobSource[] = REGISTERED_JOB_SOURCES;
+  geminiRequests: GeminiFamilyRequest[] = [];
   isSyncingIngestion: boolean = false;
   lastIngestionSync: string | null = null;
 
@@ -159,6 +162,9 @@ export class CampusHustleStore {
 
       const storedReports = localStorage.getItem(STORAGE_KEYS.JOB_REPORTS);
       if (storedReports) this.jobReports = JSON.parse(storedReports);
+
+      const storedGemini = localStorage.getItem(STORAGE_KEYS.GEMINI_REQUESTS);
+      if (storedGemini) this.geminiRequests = JSON.parse(storedGemini);
     } catch (e) {
       console.error('Error loading from local storage', e);
     }
@@ -179,6 +185,7 @@ export class CampusHustleStore {
       localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(this.applications));
       localStorage.setItem(STORAGE_KEYS.SAVED_GIGS, JSON.stringify(this.savedGigs));
       localStorage.setItem(STORAGE_KEYS.JOB_REPORTS, JSON.stringify(this.jobReports));
+      localStorage.setItem(STORAGE_KEYS.GEMINI_REQUESTS, JSON.stringify(this.geminiRequests));
     } catch (e) {
       console.error('Error saving to local storage', e);
     }
@@ -680,8 +687,71 @@ export class CampusHustleStore {
     this.notify();
   }
 
+  // --- Gemini Pro Google Family Group Access (KES 200) ---
+  requestGeminiFamilyAccess(googleEmail: string, phoneNumber: string, mpesaReceipt?: string): GeminiFamilyRequest {
+    const now = new Date().toISOString();
+    const receipt = mpesaReceipt || `QKD${Math.floor(10000000 + Math.random() * 90000000)}KE`;
+    const req: GeminiFamilyRequest = {
+      id: `gem-${Date.now()}`,
+      userId: this.user.id,
+      fullName: this.user.fullName || 'Student Applicant',
+      googleEmail: googleEmail.trim().toLowerCase(),
+      phoneNumber: phoneNumber.trim(),
+      amountKes: 200,
+      mpesaReceipt: receipt,
+      status: 'INVITATION_PENDING',
+      requestedAt: now,
+    };
+    this.geminiRequests = [req, ...this.geminiRequests];
+
+    // Record KES 200 transaction
+    const tx: MpesaTransaction = {
+      id: `tx-${Date.now()}`,
+      checkoutRequestId: `ws_CO_${Date.now()}`,
+      merchantRequestId: `MR_${Date.now()}`,
+      phoneNumber,
+      amount: 200,
+      purpose: 'SUBSCRIPTION_PASS',
+      mpesaReceipt: receipt,
+      status: 'SUCCESS',
+      createdAt: now,
+    };
+    this.transactions = [tx, ...this.transactions];
+
+    // Increment revenue in services
+    this.updateServiceRevenue('srv-gemini-family', 200);
+
+    this.notify();
+    return req;
+  }
+
+  activateGeminiFamilyMember(requestId: string) {
+    this.geminiRequests = this.geminiRequests.map((r) =>
+      r.id === requestId
+        ? { ...r, status: 'ADDED_TO_FAMILY', activatedAt: new Date().toISOString() }
+        : r
+    );
+    this.notify();
+  }
+
+  getStudentGeminiRequest(): GeminiFamilyRequest | undefined {
+    return this.geminiRequests.find((r) => r.userId === this.user.id || (this.user.email && r.googleEmail.toLowerCase() === this.user.email.toLowerCase()));
+  }
+
   logout() {
     this.isLoggedIn = false;
+    this.isAdminAuthenticated = false;
+    this.user = { ...INITIAL_USER };
+    this.subscription = null;
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(STORAGE_KEYS.IS_LOGGED_IN);
+        localStorage.removeItem(STORAGE_KEYS.USER);
+        localStorage.removeItem(STORAGE_KEYS.SUBSCRIPTION);
+      }
+    } catch (e) {
+      console.error('Error during logout', e);
+    }
     this.notify();
   }
 }

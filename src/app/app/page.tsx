@@ -9,7 +9,7 @@ import { GigBoard } from '../../components/GigBoard';
 import { ApplicationTracker } from '../../components/ApplicationTracker';
 import { SavedGigsView } from '../../components/SavedGigsView';
 import { SkillGapAnalyzer } from '../../components/SkillGapAnalyzer';
-import { CvBuilderModal } from '../../components/CvBuilderModal';
+import { GeminiFamilyModal } from '../../components/GeminiFamilyModal';
 import { RunwayEngine } from '../../components/RunwayEngine';
 import { YieldSparklines } from '../../components/YieldSparklines';
 import { GuidesModule } from '../../components/GuidesModule';
@@ -53,7 +53,7 @@ export default function StudentAppPage() {
   const [paywallFeatureName, setPaywallFeatureName] = useState<string>('Full CampusHustle Access');
   const [isEscrowModalOpen, setIsEscrowModalOpen] = useState(false);
   const [isArchitectureOpen, setIsArchitectureOpen] = useState(false);
-  const [isCvBuilderOpen, setIsCvBuilderOpen] = useState(false);
+  const [isGeminiFamilyOpen, setIsGeminiFamilyOpen] = useState(false);
   const [activeRedirectGig, setActiveRedirectGig] = useState<Gig | null>(null);
 
   const handleTriggerPaywall = (featureName: string) => {
@@ -170,7 +170,7 @@ export default function StudentAppPage() {
           onOpenPaywall={() => handleTriggerPaywall('Full CampusHustle All-Access Pass')}
           onOpenEscrowModal={() => setIsEscrowModalOpen(true)}
           onOpenArchitecture={() => setIsArchitectureOpen(true)}
-          onOpenCvBuilder={() => setIsCvBuilderOpen(true)}
+          onOpenGeminiFamily={() => setIsGeminiFamilyOpen(true)}
           isOpenMobile={isSidebarOpenMobile}
           onCloseMobile={() => setIsSidebarOpenMobile(false)}
           isCollapsed={isSidebarCollapsed}
@@ -420,9 +420,9 @@ export default function StudentAppPage() {
         onClose={() => setIsArchitectureOpen(false)}
       />
 
-      <CvBuilderModal
-        isOpen={isCvBuilderOpen}
-        onClose={() => setIsCvBuilderOpen(false)}
+      <GeminiFamilyModal
+        isOpen={isGeminiFamilyOpen}
+        onClose={() => setIsGeminiFamilyOpen(false)}
       />
 
       <ExternalRedirectModal

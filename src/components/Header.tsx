@@ -214,6 +214,9 @@ export const Header: React.FC<HeaderProps> = ({
                     onClick={() => {
                       store.logout();
                       setDropdownOpen(false);
+                      if (typeof window !== 'undefined') {
+                        window.location.href = '/';
+                      }
                     }}
                     className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-500 hover:bg-rose-500/10 flex items-center gap-2 cursor-pointer"
                   >

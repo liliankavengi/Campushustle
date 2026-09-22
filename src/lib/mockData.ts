@@ -49,6 +49,15 @@ export const INITIAL_SERVICE_METRICS: ServiceSubscriptionMetric[] = [
     revenueKes: 0,
     description: 'Daily kibanda burn analysis and HELB semester runway survival calculator.',
     category: 'Runway Engine'
+  },
+  {
+    serviceId: 'srv-gemini-family',
+    serviceName: 'Gemini Pro / Advanced AI (Google Family Access)',
+    priceKes: 200,
+    subscriberCount: 0,
+    revenueKes: 0,
+    description: 'Join Google Family for full Gemini Advanced/Pro access (1M-2M context, deep reasoning, code execution, thesis assistant).',
+    category: 'AI Pro Access'
   }
 ];
 

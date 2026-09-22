@@ -18,7 +18,11 @@ import {
   Sun,
   Moon,
   LogOut,
-  AlertCircle
+  AlertCircle,
+  Sparkles,
+  Mail,
+  Check,
+  ExternalLink
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
@@ -436,6 +440,102 @@ export const AdminDashboard: React.FC = () => {
             );
           })}
         </div>
+      </div>
+
+      {/* Gemini Pro AI Access Google Family Invitations (KES 200) */}
+      <div className={`rounded-xl p-3.5 border space-y-2.5 ${
+        isLight ? 'bg-white border-purple-200 shadow-sm' : 'bg-slate-900 border-purple-900/50'
+      }`}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-purple-600" />
+              <h3 className="text-xs sm:text-sm font-bold">
+                Gemini Pro Google Family Group Requests (KES 200)
+              </h3>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-purple-500/10 text-purple-600 border border-purple-500/20">
+                {store.geminiRequests.length} Total
+              </span>
+            </div>
+            <p className={`text-[11px] mt-0.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+              Students who paid KES 200 to receive Google Family Group invites for Gemini Advanced 2.0. Add their Google email to your Google Family.
+            </p>
+          </div>
+
+          <a
+            href="https://families.google.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white transition-colors cursor-pointer w-fit"
+          >
+            <span>Open Google Families</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        </div>
+
+        {store.geminiRequests.length === 0 ? (
+          <div className={`text-center py-6 rounded-lg border border-dashed text-xs ${
+            isLight ? 'border-slate-200 text-slate-500' : 'border-slate-800 text-slate-400'
+          }`}>
+            No pending Gemini Pro family requests yet.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs min-w-[600px]">
+              <thead>
+                <tr className={`border-b text-[11px] font-mono ${isLight ? 'border-slate-200 text-slate-500' : 'border-slate-800 text-slate-400'}`}>
+                  <th className="py-2.5 px-3">Student / Google Email</th>
+                  <th className="py-2.5 px-3">M-Pesa Phone</th>
+                  <th className="py-2.5 px-3">Amount</th>
+                  <th className="py-2.5 px-3">Receipt</th>
+                  <th className="py-2.5 px-3">Status</th>
+                  <th className="py-2.5 px-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className={`divide-y ${isLight ? 'divide-slate-100 text-slate-700' : 'divide-slate-800/60 text-slate-300'}`}>
+                {store.geminiRequests.map((req) => (
+                  <tr key={req.id} className={`transition-colors ${isLight ? 'hover:bg-purple-50/30' : 'hover:bg-slate-800/40'}`}>
+                    <td className="py-2.5 px-3">
+                      <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <Mail className="w-3.5 h-3.5 text-purple-600" />
+                        <span className="font-mono text-purple-600 dark:text-purple-400">{req.googleEmail}</span>
+                      </div>
+                      <div className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>{req.fullName}</div>
+                    </td>
+                    <td className="py-2.5 px-3 font-mono text-[11px]">{req.phoneNumber}</td>
+                    <td className="py-2.5 px-3 font-bold text-emerald-600">KES {req.amountKes}</td>
+                    <td className="py-2.5 px-3 font-mono text-[10px] text-slate-500">{req.mpesaReceipt}</td>
+                    <td className="py-2.5 px-3">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        req.status === 'ADDED_TO_FAMILY'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800'
+                          : 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800'
+                      }`}>
+                        {req.status === 'ADDED_TO_FAMILY' ? 'Added to Family' : 'Invite Pending'}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-right">
+                      {req.status !== 'ADDED_TO_FAMILY' ? (
+                        <button
+                          onClick={() => store.activateGeminiFamilyMember(req.id)}
+                          className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors cursor-pointer inline-flex items-center gap-1"
+                        >
+                          <Check className="w-3 h-3" />
+                          <span>Mark Added</span>
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-emerald-600 font-bold flex items-center justify-end gap-1">
+                          <CheckCircle className="w-3 h-3" />
+                          <span>Active</span>
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Student Account Registry Table */}
